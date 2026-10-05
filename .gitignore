@@ -1,0 +1,4 @@
+# VS Files
+.cache
+.vscode
+build

@@ -1,0 +1,29 @@
+BasedOnStyle: Microsoft
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: ForIndentation
+
+BreakBeforeBraces: Allman
+
+AccessModifierOffset: -4
+NamespaceIndentation: All
+
+ColumnLimit: 0
+
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: WithoutElse
+
+AlignAfterOpenBracket: DontAlign
+AlignConsecutiveDeclarations: true
+AlignConsecutiveAssignments: true
+AlignOperands: false
+
+BreakBeforeTernaryOperators: true
+
+PointerAlignment: Left
+
+SpaceBeforeParens: ControlStatements
+SpacesInParentheses: false
+
+SortIncludes: false
