@@ -1,6 +1,9 @@
 #pragma once
 
+#include "erebus/vulkan/RenderObject.h"
 #include <erebus/engine/App.h>
+
+#include <vector>
 
 namespace fd
 {
@@ -14,8 +17,7 @@ namespace fd
 	private:
 		erb::App m_app;
 
-		erb::RenderObject m_object;
-		erb::RenderObject m_object1;
+		std::vector<erb::RenderObject> m_gameObjects;
 
 		void onInit();
 		void onUpdate();
@@ -24,5 +26,12 @@ namespace fd
 		void onCleanup();
 
 		void cleanup();
+
+		void removeEntity(erb::RenderObject& object);
+		void addEntity(erb::RenderObject& object);
+
+		void destroyOldEntities();
+
+		std::pair<std::int32_t, erb::RenderObject*> getRenderObjectIndex(erb::RenderObject& object);
 	};
 } // namespace fd

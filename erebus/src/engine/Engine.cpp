@@ -20,9 +20,9 @@ namespace erb
 		m_renderer.addRenderObject(renderObject);
 	}
 
-	void Engine::destroyEntity(RenderObject* renderObject)
+	void Engine::destroyEntity(RenderObject& renderObject)
 	{
-		m_renderer.removeRenderObject(renderObject);
+		renderObject.shouldBeDestroyed = true;
 	}
 
 	Model* Engine::createModelResource(const std::string& name, const std::string& path)

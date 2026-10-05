@@ -579,6 +579,7 @@ namespace erb
 		if (object == m_renderObjects.end())
 			return;
 
+		renderObject->hasBeenDestroyed = true;
 		m_descriptorManager->releaseObject(renderObject->gpu);
 		m_renderObjects.erase(object->first);
 	}
@@ -685,6 +686,7 @@ namespace erb
 		for (auto& object : m_renderObjects)
 		{
 			auto& renderObject = object.second;
+			if (renderObject->shouldBeDestroyed) continue;
 
 			auto& vertexBuffer = renderObject->materials->model->getVertexBuffer();
 			auto& indexBuffer  = renderObject->materials->model->getIndexBuffer();
@@ -722,11 +724,6 @@ namespace erb
 
 	void Renderer::updateUniformBuffers()
 	{
-		static auto startTime = std::chrono::high_resolution_clock::now();
-
-		auto  currentTime = std::chrono::high_resolution_clock::now();
-		float time        = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
 		glm::mat4 view = glm::lookAt(glm::vec3(2.0F, 2.0F, 6.0F), glm::vec3(0.0F, 0.0F, 0.0F), glm::vec3(0.0F, 1.0F, 0.0F));
 		glm::mat4 proj = glm::perspective(glm::radians(45.0F),
 		    static_cast<float>(m_swapChain->getSwapChainExtent().width) / static_cast<float>(m_swapChain->getSwapChainExtent().height), 0.1F, 20.0F);
@@ -734,6 +731,7 @@ namespace erb
 		for (auto& object : m_renderObjects)
 		{
 			auto& renderObject = object.second;
+			if (renderObject->shouldBeDestroyed) continue;
 
 			UniformBufferObject ubo{
 			    .model = renderObject->transform.getMatrix(),
@@ -753,6 +751,26 @@ namespace erb
 
 	void Renderer::render()
 	{
+		std::vector<RenderObject*> toRemove;
+		for (auto& object : m_renderObjects)
+		{
+			auto& renderObject = object.second;
+
+			if (!renderObject->shouldBeDestroyed) continue;
+			if (renderObject->framesPassedBeforeDestroy < RMAX_FRAMES_IN_FLIGHT + 1)
+			{
+				renderObject->framesPassedBeforeDestroy++;
+				continue;
+			}
+
+			toRemove.push_back(renderObject);
+		}
+
+		for (auto& object : toRemove)
+		{
+			removeRenderObject(object);
+		}
+
 		auto& commandBuffer = m_commandBuffers[m_frameIndex];
 
 		auto& inFlightFence            = m_inFlightFences[m_frameIndex];

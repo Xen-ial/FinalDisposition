@@ -24,7 +24,7 @@ namespace erb
 		bool init(const std::string& applicationName);
 
 		void createEntity(RenderObject* renderObject);
-		void destroyEntity(RenderObject* renderObject);
+		void destroyEntity(RenderObject& renderObject);
 
 		Model*   createModelResource(const std::string& name, const std::string& path);
 		Texture* createTextureResource(const std::string& name, const std::string& path);
@@ -32,7 +32,7 @@ namespace erb
 		void destroyTextureRes(const std::string& name);
 		void destroyModelRes(const std::string& name);
 
-		Model* getModel(const std::string& name);
+		Model*   getModel(const std::string& name);
 		Texture* getTexture(const std::string& name);
 
 		void render();

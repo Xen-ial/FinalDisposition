@@ -1,7 +1,13 @@
-#include "erebus/utils/ModelLoader.h"
-#include "erebus/utils/Texture.h"
+#include "erebus/vulkan/RenderObject.h"
 #include <application/Game.h>
+
 #include <glm/ext/vector_float3.hpp>
+#include <glm/gtc/constants.hpp>
+
+#include <print>
+#include <vector>
+#include <algorithm>
+#include <iterator>
 
 namespace fd
 {
@@ -37,23 +43,19 @@ namespace fd
 		auto* testModel   = engine.createModelResource("testModel", "resources/models/cube.obj");
 		auto* testTexture = engine.createTextureResource("testTexture", "resources/textures/cube.jpg");
 
-		m_object.transform.setPosition(glm::vec3(-2.0F, 0.0F, -1.0F));
-		m_object.transform.setRotation(glm::vec3(0.0F, 0.0F, 0.0F));
-		m_object.transform.setScale(glm::vec3(0.5F, 0.5F, 0.5F));
+		erb::RenderObject object;
 
-		m_object.materials.emplace(testModel, testTexture);
-		engine.createEntity(&m_object);
+		object.transform.setPosition(glm::vec3(-2.0F, 0.0F, -1.0F));
+		object.transform.setRotation(glm::vec3(0.0F, 0.0F, 0.0F));
+		object.transform.setScale(glm::vec3(0.5F, 0.5F, 0.5F));
 
-		m_object1.transform.setPosition(glm::vec3(2.0F, 0.0F, 1.0F));
-		m_object1.transform.setRotation(glm::vec3(0.0F, 0.0F, 0.0F));
-		m_object1.transform.setScale(glm::vec3(0.5F, 0.5F, 0.5F));
-
-		m_object1.materials.emplace(testModel, testTexture);
-		engine.createEntity(&m_object1);
+		object.materials.emplace(testModel, testTexture);
+		addEntity(object);
 	}
 
 	void Game::onUpdate()
 	{
+		destroyOldEntities();
 	}
 
 	void Game::onDraw()
@@ -71,5 +73,49 @@ namespace fd
 	void Game::cleanup()
 	{
 		m_app.cleanup();
+	}
+
+	std::pair<std::int32_t, erb::RenderObject*> Game::getRenderObjectIndex(erb::RenderObject& object)
+	{
+		auto target = std::ranges::find_if(m_gameObjects,
+		    [&object](erb::RenderObject& candidate)
+		    {
+			    return &candidate == &object;
+		    });
+
+		if (target == m_gameObjects.end())
+			return {-1, target.base()};
+
+		auto index = std::distance(m_gameObjects.begin(), target);
+		return {static_cast<std::int32_t>(index), target.base()};
+	}
+
+	void Game::removeEntity(erb::RenderObject& object)
+	{
+		auto [index, target] = getRenderObjectIndex(object);
+		if (index == -1)
+			return;
+
+		auto& engine = m_app.getEngine();
+		engine.destroyEntity(*target);
+	}
+
+	void Game::addEntity(erb::RenderObject& object)
+	{
+		m_gameObjects.push_back(std::move(object));
+		auto& gameObject = m_gameObjects.at(m_gameObjects.size() - 1);
+
+		auto& engine = m_app.getEngine();
+		engine.createEntity(&gameObject);
+	}
+
+	void Game::destroyOldEntities()
+	{
+		for (auto& object : m_gameObjects)
+		{
+			auto [index, renderObject] = getRenderObjectIndex(object);
+			if (object.hasBeenDestroyed)
+				m_gameObjects.erase(m_gameObjects.begin() + index);
+		}
 	}
 } // namespace fd

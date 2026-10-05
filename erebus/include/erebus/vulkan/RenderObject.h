@@ -59,5 +59,10 @@ namespace erb
 
 		std::optional<RenderMaterials> materials;
 		ObjectGpuResources             gpu{};
+
+		bool shouldBeDestroyed{false};
+		bool hasBeenDestroyed{false};
+
+		int framesPassedBeforeDestroy = 0;
 	};
 } // namespace erb
