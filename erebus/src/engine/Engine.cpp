@@ -12,6 +12,7 @@ namespace erb
 			return false;
 		}
 
+		m_input.init();
 		return true;
 	}
 
@@ -66,6 +67,7 @@ namespace erb
 	void Engine::render()
 	{
 		m_renderer.render();
+		m_input.resetFrame();
 	}
 
 	void Engine::cleanup()

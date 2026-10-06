@@ -19,7 +19,7 @@ namespace erb
 	{
 	public:
 		Engine(Window& window)
-		    : m_window(window), m_renderer(m_window.get()) {}
+		    : m_window(window), m_renderer(m_window.get()), m_input(m_window.get()) {}
 
 		bool init(const std::string& applicationName);
 
@@ -41,10 +41,12 @@ namespace erb
 
 		Renderer& getRenderer() { return m_renderer; }
 		Window&   getWindow() { return m_window; }
+		Input&    getInput() { return m_input; }
 
 	private:
 		std::reference_wrapper<Window> m_window;
 
+		Input    m_input;
 		Renderer m_renderer;
 	};
 } // namespace erb

@@ -1,3 +1,5 @@
+#include "GLFW/glfw3.h"
+#include "erebus/engine/Input.h"
 #include "erebus/vulkan/RenderObject.h"
 #include <application/Game.h>
 
@@ -38,7 +40,10 @@ namespace fd
 
 	void Game::onInit()
 	{
+		auto& input  = m_app.getInput();
 		auto& engine = m_app.getEngine();
+
+		input.setCursorMode(erb::CursorModes::CURSOR_DISABLED);
 
 		auto* testModel   = engine.createModelResource("testModel", "resources/models/cube.obj");
 		auto* testTexture = engine.createTextureResource("testTexture", "resources/textures/cube.jpg");
@@ -68,6 +73,8 @@ namespace fd
 
 	void Game::onCleanup()
 	{
+		destroyOldEntities();
+		m_gameObjects.clear();
 	}
 
 	void Game::cleanup()

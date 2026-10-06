@@ -28,6 +28,7 @@ namespace erb
 
 		Window& getWindow() { return m_window; }
 		Engine& getEngine() { return m_engine.value(); }
+		Input&  getInput() { return m_engine->getInput(); }
 
 	private:
 		std::optional<Engine> m_engine;
