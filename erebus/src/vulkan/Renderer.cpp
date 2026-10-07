@@ -1,11 +1,11 @@
-#include "erebus/utils/ModelLoader.h"
 #include "erebus/vulkan/VkDescriptorManager.h"
 #include "vulkan/vulkan.hpp"
-#include <chrono>
-#include <cstdint>
 #include <erebus/vulkan/Renderer.h>
 #include <erebus/vulkan/VkHelpers.h>
+
+#include <erebus/utils/ModelLoader.h>
 #include <erebus/utils/Vertex.h>
+#include <erebus/utils/Material.h>
 
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_raii.hpp>
@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <print>
 #include <functional>
+#include <cstdint>
 
 const std::vector<const char*> VALIDATION_LAYERS = {
     "VK_LAYER_KHRONOS_validation"};
@@ -89,15 +90,27 @@ namespace erb
 			return false;
 		}
 
-		if (!createUnlitDescriptorSetLayout())
+		// if (!createUnlitDescriptorSetLayout())
+		// {
+		// 	std::println("initialization failed at createDescriptorLayout");
+		// 	return false;
+		// }
+
+		// if (!createUnlitGraphicsPipeline())
+		// {
+		// 	std::println("initialization failed at createUnlitGraphicsPipeline");
+		// 	return false;
+		// }
+
+		if (!createLightingDescriptorSetLayout())
 		{
-			std::println("initialization failed at createDescriptorLayout");
+			std::println("initalization failed at createLightingDescriptorSetLayout");
 			return false;
 		}
 
-		if (!createUnlitGraphicsPipeline())
+		if (!createLightingGraphicsPipeline())
 		{
-			std::println("initialization failed at createUnlitGraphicsPipeline");
+			std::println("initalization failed at createLightingGraphicsPipeline");
 			return false;
 		}
 
@@ -449,6 +462,149 @@ namespace erb
 		return true;
 	}
 
+	bool Renderer::createLightingDescriptorSetLayout()
+	{
+		if (m_hasInitialized)
+			return true;
+
+		vk::DescriptorSetLayoutBinding uboLayout{
+		    .binding         = 0,
+		    .descriptorType  = vk::DescriptorType::eUniformBuffer,
+		    .descriptorCount = 1,
+		    .stageFlags      = vk::ShaderStageFlagBits::eVertex};
+
+		vk::DescriptorSetLayoutBinding textureLayout{
+		    .binding         = 1,
+		    .descriptorType  = vk::DescriptorType::eCombinedImageSampler,
+		    .descriptorCount = 1,
+		    .stageFlags      = vk::ShaderStageFlagBits::eFragment};
+
+		std::array<vk::DescriptorSetLayoutBinding, 2> bindings{{uboLayout, textureLayout}};
+
+		vk::DescriptorSetLayoutCreateInfo layoutInfo{
+		    .bindingCount = static_cast<std::uint32_t>(bindings.size()),
+		    .pBindings    = bindings.data()};
+
+		m_lightingPipeline.descriptorSetLayout = vk::raii::DescriptorSetLayout(m_device->getDevice(), layoutInfo);
+		return true;
+	}
+
+	bool Renderer::createLightingGraphicsPipeline()
+	{
+		if (m_hasInitialized)
+			return true;
+
+		VkShader lightingShader(*m_device);
+
+		if (!lightingShader.createFromFile("resources/shaders/BasicLighting.spv"))
+		{
+			std::println("failed to load basic lighting shader");
+			return false;
+		}
+
+		lightingShader.addStage(vk::ShaderStageFlagBits::eVertex, "vertMain");
+		lightingShader.addStage(vk::ShaderStageFlagBits::eFragment, "fragMain");
+
+		auto& shaderStages = lightingShader.getShaderStages();
+
+		auto bindingDescription   = Vertex::getBindingDescription();
+		auto attributeDescription = Vertex::getAttributeDescriptions();
+
+		vk::PipelineVertexInputStateCreateInfo vertexInputInfo{
+		    .vertexBindingDescriptionCount   = 1,
+		    .pVertexBindingDescriptions      = &bindingDescription,
+		    .vertexAttributeDescriptionCount = static_cast<std::uint32_t>(attributeDescription.size()),
+		    .pVertexAttributeDescriptions    = attributeDescription.data()};
+
+		vk::PipelineInputAssemblyStateCreateInfo inputAssembly{
+		    .topology = vk::PrimitiveTopology::eTriangleList};
+
+		vk::PipelineViewportStateCreateInfo viewportState{
+		    .viewportCount = 1,
+		    .scissorCount  = 1};
+
+		vk::PipelineRasterizationStateCreateInfo rasterizer{
+		    .depthClampEnable        = vk::False,
+		    .rasterizerDiscardEnable = vk::False,
+		    .polygonMode             = vk::PolygonMode::eFill,
+		    .cullMode                = vk::CullModeFlagBits::eBack,
+		    .frontFace               = vk::FrontFace::eCounterClockwise,
+		    .lineWidth               = 1.0F};
+
+		vk::PipelineMultisampleStateCreateInfo multisampling{
+		    .rasterizationSamples = m_msaaSamples,
+		    .sampleShadingEnable  = vk::False};
+
+		vk::PipelineDepthStencilStateCreateInfo depthStencil{
+		    .depthTestEnable       = vk::True,
+		    .depthWriteEnable      = vk::True,
+		    .depthCompareOp        = vk::CompareOp::eLess,
+		    .depthBoundsTestEnable = vk::False,
+		    .stencilTestEnable     = vk::False};
+
+		vk::PipelineColorBlendAttachmentState colorBlendAttachment{
+		    .blendEnable    = vk::False,
+		    .colorWriteMask = {
+		        vk::ColorComponentFlagBits::eR |
+		        vk::ColorComponentFlagBits::eG |
+		        vk::ColorComponentFlagBits::eB |
+		        vk::ColorComponentFlagBits::eA}};
+
+		vk::PipelineColorBlendStateCreateInfo colorBlending{
+		    .logicOpEnable   = vk::False,
+		    .logicOp         = vk::LogicOp::eCopy,
+		    .attachmentCount = 1,
+		    .pAttachments    = &colorBlendAttachment};
+
+		std::vector<vk::DynamicState> dynamicStates = {
+		    vk::DynamicState::eViewport,
+		    vk::DynamicState::eScissor};
+
+		vk::PipelineDynamicStateCreateInfo dynamicState{
+		    .dynamicStateCount = static_cast<std::uint32_t>(dynamicStates.size()),
+		    .pDynamicStates    = dynamicStates.data()};
+
+		vk::PushConstantRange pushConstantRange{
+		    .stageFlags = vk::ShaderStageFlagBits::eFragment,
+		    .offset     = 0,
+		    .size       = sizeof(Material)};
+
+		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo{
+		    .setLayoutCount         = 1,
+		    .pSetLayouts            = &*m_lightingPipeline.descriptorSetLayout,
+		    .pushConstantRangeCount = 1,
+		    .pPushConstantRanges    = &pushConstantRange};
+
+		m_lightingPipeline.pipelineLayout = vk::raii::PipelineLayout(m_device->getDevice(), pipelineLayoutCreateInfo);
+
+		vk::Format depthFormat = findDepthFormat(m_device->getPhysicalDevice());
+
+		vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo{
+		    .stageCount          = static_cast<std::uint32_t>(shaderStages.size()),
+		    .pStages             = shaderStages.data(),
+		    .pVertexInputState   = &vertexInputInfo,
+		    .pInputAssemblyState = &inputAssembly,
+		    .pViewportState      = &viewportState,
+		    .pRasterizationState = &rasterizer,
+		    .pMultisampleState   = &multisampling,
+		    .pDepthStencilState  = &depthStencil,
+		    .pColorBlendState    = &colorBlending,
+		    .pDynamicState       = &dynamicState,
+		    .layout              = m_lightingPipeline.pipelineLayout,
+		    .renderPass          = nullptr};
+
+		vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo{
+		    .colorAttachmentCount    = 1,
+		    .pColorAttachmentFormats = &m_swapChain->getSwapChainSurfaceFormat().format,
+		    .depthAttachmentFormat   = depthFormat};
+
+		vk::StructureChain<vk::GraphicsPipelineCreateInfo, vk::PipelineRenderingCreateInfo>
+		    pipelineCreateInfoChain = {graphicsPipelineCreateInfo, pipelineRenderingCreateInfo};
+
+		m_lightingPipeline.pipeline = vk::raii::Pipeline(m_device->getDevice(), nullptr, pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>());
+		return true;
+	}
+
 	bool Renderer::createCommandPool()
 	{
 		if (m_hasInitialized)
@@ -516,7 +672,7 @@ namespace erb
 			return true;
 
 		const std::uint32_t maxObjectCount = 64;
-		m_descriptorManager.emplace(*m_device, m_unlitPipeline.descriptorSetLayout, RMAX_FRAMES_IN_FLIGHT, maxObjectCount);
+		m_descriptorManager.emplace(*m_device, m_lightingPipeline.descriptorSetLayout, RMAX_FRAMES_IN_FLIGHT, maxObjectCount);
 
 		return true;
 	}
@@ -672,7 +828,7 @@ namespace erb
 		    .pDepthAttachment     = &depthAttachmentInfo};
 
 		commandBuffer.beginRendering(renderingInfo);
-		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_unlitPipeline.pipeline);
+		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_lightingPipeline.pipeline);
 
 		commandBuffer.setViewport(0,
 		    vk::Viewport(
@@ -697,13 +853,10 @@ namespace erb
 			commandBuffer.bindVertexBuffers(0, *vertexBuffer, {0});
 			commandBuffer.bindIndexBuffer(*indexBuffer, 0, vk::IndexTypeValue<decltype(indicies)::value_type>::value);
 
-			commandBuffer.bindDescriptorSets(
-			    vk::PipelineBindPoint::eGraphics,
-			    m_unlitPipeline.pipelineLayout,
-			    0,
-			    *renderObject->gpu.descriptorSets[m_frameIndex],
-			    nullptr);
+			Material mat = renderObject->materials->material;
+			pushMaterialProperties(commandBuffer, mat);
 
+			VkDescriptorManager::bindObjectForDraw(commandBuffer, m_lightingPipeline.pipelineLayout, renderObject->gpu, m_frameIndex);
 			commandBuffer.drawIndexed(indicies.size(), 1, 0, 0, 0);
 		}
 
@@ -735,9 +888,11 @@ namespace erb
 			    .view  = camera.getViewMatrix(),
 			    .proj  = camera.getProjectionMatrix(
 			        static_cast<float>(m_swapChain->getSwapChainExtent().width) /
-			        static_cast<float>(m_swapChain->getSwapChainExtent().height))};
+			        static_cast<float>(m_swapChain->getSwapChainExtent().height)),
+			    .camPos     = glm::vec4(camera.getPosition(), 1.0F),
+			    .lightCount = 0};
 
-			memcpy(renderObject->gpu.mappedUniforms[m_frameIndex], &ubo, sizeof(ubo));
+			VkDescriptorManager::updateObjectForFrame(renderObject->gpu, m_frameIndex, ubo);
 		}
 	}
 
@@ -746,6 +901,11 @@ namespace erb
 		m_swapChain->recreate();
 		createColorResources();
 		createDepthResources();
+	}
+
+	void Renderer::pushMaterialProperties(vk::CommandBuffer commandBuffer, const Material& material) const
+	{
+		commandBuffer.pushConstants(*m_lightingPipeline.pipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof(Material), &material);
 	}
 
 	void Renderer::destroyOldObjects()

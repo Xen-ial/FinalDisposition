@@ -2,13 +2,13 @@
 #include <erebus/utils/Model.h>
 #include <erebus/utils/Texture.h>
 #include <erebus/utils/Transform.h>
+#include <erebus/utils/Material.h>
 
 #include <vulkan/vulkan_raii.hpp>
 
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <functional>
 #include <optional>
 
 namespace erb
@@ -35,6 +35,8 @@ namespace erb
 
 		Model*   model   = nullptr;
 		Texture* texture = nullptr;
+
+		Material material{};
 	};
 
 	struct RenderObject

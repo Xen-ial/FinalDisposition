@@ -59,6 +59,7 @@ namespace erb
 		VkDescriptorManager& getDescriptorManager() { return m_descriptorManager.value(); }
 
 		Pipeline& getUnlitPipeline() { return m_unlitPipeline; }
+		Pipeline& getLightingPipeline() { return m_lightingPipeline; }
 
 		bool getHasInitialized() const { return m_hasInitialized; }
 
@@ -100,6 +101,7 @@ namespace erb
 		vk::SampleCountFlagBits m_msaaSamples{};
 
 		Pipeline m_unlitPipeline;
+		Pipeline m_lightingPipeline;
 
 		vk::raii::CommandPool                m_commandPool = nullptr;
 		std::vector<vk::raii::CommandBuffer> m_commandBuffers;
@@ -126,8 +128,12 @@ namespace erb
 		bool createSurface();
 		bool createDevices();
 		bool createSwapChain();
+
 		bool createUnlitDescriptorSetLayout();
 		bool createUnlitGraphicsPipeline();
+		bool createLightingDescriptorSetLayout();
+		bool createLightingGraphicsPipeline();
+
 		bool createCommandPool();
 		bool createColorResources();
 		bool createDepthResources();
@@ -139,5 +145,6 @@ namespace erb
 		void recordCommandBuffer(std::uint32_t imageIndex);
 		void updateUniformBuffers(Camera3D& camera);
 		void updateFrameTime();
+		void pushMaterialProperties(vk::CommandBuffer commandBuffer, const Material& material) const;
 	};
 } // namespace erb

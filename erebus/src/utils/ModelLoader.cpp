@@ -36,7 +36,7 @@ namespace objParser
 			{
 				erb::Vertex vertex{};
 
-				vertex.pos = {
+				vertex.position = {
 				    attrib.vertices[(3 * index.vertex_index) + 0],
 				    attrib.vertices[(3 * index.vertex_index) + 1],
 				    attrib.vertices[(3 * index.vertex_index) + 2]};
@@ -44,8 +44,6 @@ namespace objParser
 				vertex.texCoord = {
 				    attrib.texcoords[(2 * index.texcoord_index) + 0],
 				    1.0 - attrib.texcoords[(2 * index.texcoord_index) + 1]};
-
-				vertex.color = {1.0F, 1.0F, 1.0F};
 
 				auto [iter, inserted] = uniqueVertices.insert({vertex, static_cast<std::uint32_t>(verticies.size())});
 				if (inserted)

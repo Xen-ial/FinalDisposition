@@ -21,6 +21,9 @@ namespace erb
 		alignas(16) glm::mat4 model = glm::mat4(1.0F);
 		alignas(16) glm::mat4 view  = glm::mat4(1.0F);
 		alignas(16) glm::mat4 proj  = glm::mat4(1.0F);
+		alignas(16) glm::vec4 camPos = glm::vec4(1.0F);
+
+		alignas(16) glm::int32_t lightCount = 0;
 	};
 
 	struct PoolRecord
