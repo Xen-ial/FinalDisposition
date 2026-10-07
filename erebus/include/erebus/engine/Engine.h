@@ -1,4 +1,5 @@
 #pragma once
+#include "erebus/engine/Camera.h"
 #include <erebus/vulkan/Renderer.h>
 #include <erebus/vulkan/RenderObject.h>
 
@@ -19,12 +20,15 @@ namespace erb
 	{
 	public:
 		Engine(Window& window)
-		    : m_window(window), m_renderer(m_window.get()), m_input(m_window.get()) {}
+		    : m_window(window), m_renderer(m_window.get()),
+		      m_input(m_window.get()) {}
 
 		bool init(const std::string& applicationName);
 
 		void createEntity(RenderObject* renderObject);
 		void destroyEntity(RenderObject& renderObject);
+
+		void setCamera(Camera3D& camera);
 
 		Model*   createModelResource(const std::string& name, const std::string& path);
 		Texture* createTextureResource(const std::string& name, const std::string& path);
@@ -42,10 +46,14 @@ namespace erb
 		Renderer& getRenderer() { return m_renderer; }
 		Window&   getWindow() { return m_window; }
 		Input&    getInput() { return m_input; }
+		Camera3D& getCamera() { return m_camera; }
+
+		float deltaTime() const { return m_renderer.getDeltaTime(); }
 
 	private:
 		std::reference_wrapper<Window> m_window;
 
+		Camera3D m_camera;
 		Input    m_input;
 		Renderer m_renderer;
 	};

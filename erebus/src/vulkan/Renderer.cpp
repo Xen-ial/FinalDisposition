@@ -137,6 +137,7 @@ namespace erb
 			return false;
 		}
 
+		m_lastFrame      = static_cast<float>(glfwGetTime());
 		m_hasInitialized = true;
 		return true;
 	}
@@ -722,12 +723,8 @@ namespace erb
 		commandBuffer.end();
 	}
 
-	void Renderer::updateUniformBuffers()
+	void Renderer::updateUniformBuffers(Camera3D& camera)
 	{
-		glm::mat4 view = glm::lookAt(glm::vec3(2.0F, 2.0F, 6.0F), glm::vec3(0.0F, 0.0F, 0.0F), glm::vec3(0.0F, 1.0F, 0.0F));
-		glm::mat4 proj = glm::perspective(glm::radians(45.0F),
-		    static_cast<float>(m_swapChain->getSwapChainExtent().width) / static_cast<float>(m_swapChain->getSwapChainExtent().height), 0.1F, 20.0F);
-
 		for (auto& object : m_renderObjects)
 		{
 			auto& renderObject = object.second;
@@ -735,8 +732,10 @@ namespace erb
 
 			UniformBufferObject ubo{
 			    .model = renderObject->transform.getMatrix(),
-			    .view  = view,
-			    .proj  = proj};
+			    .view  = camera.getViewMatrix(),
+			    .proj  = camera.getProjectionMatrix(
+			        static_cast<float>(m_swapChain->getSwapChainExtent().width) /
+			        static_cast<float>(m_swapChain->getSwapChainExtent().height))};
 
 			memcpy(renderObject->gpu.mappedUniforms[m_frameIndex], &ubo, sizeof(ubo));
 		}
@@ -749,9 +748,10 @@ namespace erb
 		createDepthResources();
 	}
 
-	void Renderer::render()
+	void Renderer::destroyOldObjects()
 	{
 		std::vector<RenderObject*> toRemove;
+
 		for (auto& object : m_renderObjects)
 		{
 			auto& renderObject = object.second;
@@ -770,6 +770,19 @@ namespace erb
 		{
 			removeRenderObject(object);
 		}
+	}
+
+	void Renderer::updateFrameTime()
+	{
+		float now   = static_cast<float>(glfwGetTime());
+		m_deltaTime = now - m_lastFrame;
+		m_lastFrame = now;
+	}
+
+	void Renderer::render(Camera3D& camera)
+	{
+		updateFrameTime();
+		destroyOldObjects();
 
 		auto& commandBuffer = m_commandBuffers[m_frameIndex];
 
@@ -801,7 +814,7 @@ namespace erb
 		commandBuffer.reset();
 		recordCommandBuffer(imageIndex);
 
-		updateUniformBuffers();
+		updateUniformBuffers(camera);
 
 		auto& renderFinishedSemaphore = m_renderFinishedSemaphore[imageIndex];
 

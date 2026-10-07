@@ -66,7 +66,7 @@ namespace erb
 
 	void Engine::render()
 	{
-		m_renderer.render();
+		m_renderer.render(m_camera);
 		m_input.resetFrame();
 	}
 

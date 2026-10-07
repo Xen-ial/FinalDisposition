@@ -1,5 +1,7 @@
 #pragma once
 #include <erebus/engine/Window.h>
+#include <erebus/engine/Camera.h>
+
 #include <erebus/utils/ResourceManager.h>
 
 #include <erebus/vulkan/VkDevice.h>
@@ -48,8 +50,9 @@ namespace erb
 		static Model createModel(const std::string& path);
 		Texture      createTexture(const std::string& path, bool useMipMaps = false);
 
-		void render();
+		void render(Camera3D& camera);
 		void cleanup();
+		void destroyOldObjects();
 
 		Window&              getWindow() { return m_window; }
 		ResourceManager&     getResources() { return m_resourceManager; }
@@ -64,8 +67,13 @@ namespace erb
 		std::uint32_t getWidth() const { return m_width; }
 		std::uint32_t getHeight() const { return m_height; }
 
+		float getDeltaTime() const { return m_deltaTime; }
+
 	private:
 		std::string m_applicationName;
+
+		float m_lastFrame{};
+		float m_deltaTime{};
 
 		std::uint32_t m_width{};
 		std::uint32_t m_height{};
@@ -129,6 +137,7 @@ namespace erb
 
 		void onFramebufferResized();
 		void recordCommandBuffer(std::uint32_t imageIndex);
-		void updateUniformBuffers();
+		void updateUniformBuffers(Camera3D& camera);
+		void updateFrameTime();
 	};
 } // namespace erb

@@ -1,4 +1,5 @@
 #include "GLFW/glfw3.h"
+#include "erebus/engine/Camera.h"
 #include "erebus/engine/Input.h"
 #include "erebus/vulkan/RenderObject.h"
 #include <application/Game.h>
@@ -60,6 +61,29 @@ namespace fd
 
 	void Game::onUpdate()
 	{
+		auto& input  = m_app.getInput();
+		auto& engine = m_app.getEngine();
+		auto& camera = engine.getCamera();
+
+		const float deltaTime = engine.deltaTime();
+
+		if (input.isKeyDown(GLFW_KEY_W))
+			camera.processKeyboard(erb::CameraMovement::FORWARD, deltaTime);
+
+		if (input.isKeyDown(GLFW_KEY_S))
+			camera.processKeyboard(erb::CameraMovement::BACKWARD, deltaTime);
+
+		if (input.isKeyDown(GLFW_KEY_D))
+			camera.processKeyboard(erb::CameraMovement::RIGHT, deltaTime);
+
+		if (input.isKeyDown(GLFW_KEY_A))
+			camera.processKeyboard(erb::CameraMovement::LEFT, deltaTime);
+
+		const auto& mousePos = input.getRelativeMousePosition();
+		camera.processMouseMovement(mousePos.x, mousePos.y);
+
+		std::println("CameraPos: {} {} {}", camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
+
 		destroyOldEntities();
 	}
 

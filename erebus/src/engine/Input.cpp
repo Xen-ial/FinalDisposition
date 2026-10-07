@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 
 #include <print>
+#include <variant>
 
 namespace erb
 {
@@ -44,8 +45,21 @@ namespace erb
 
 	void Input::cursorPosCallback(GLFWwindow* window, const double xPos, const double yPos)
 	{
-		glm::vec2 mousePos{xPos, yPos};
-		m_mousePosition = mousePos;
+		const glm::vec2 mousePos{xPos, yPos};
+
+		m_mouseAbsolutePosition = mousePos;
+
+		if (!m_hadFirstMouseMovement)
+		{
+			m_mouseLastPosition     = mousePos;
+			m_hadFirstMouseMovement = true;
+		}
+
+		const float xOffset = mousePos.x - m_mouseLastPosition.x;
+		const float yOffset = m_mouseLastPosition.y - mousePos.y;
+
+		m_mouseLastPosition     = mousePos;
+		m_mouseRelativePosition = glm::vec2{xOffset, yOffset};
 	}
 
 	void Input::scrollCallback(GLFWwindow* window, double xOffset, double yOffset)
@@ -101,6 +115,8 @@ namespace erb
 
 		m_mouseButtonsPresssed.clear();
 		m_mouseButtonsReleased.clear();
+
+		m_mouseRelativePosition = {};
 	}
 
 	bool Input::isKeyDown(int key)

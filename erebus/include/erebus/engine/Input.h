@@ -50,14 +50,19 @@ namespace erb
 
 		void setCursorMode(const CursorModes& cursorMode);
 
-		[[nodiscard]] const glm::vec2& getMousePosition() const { return m_mousePosition; }
+		[[nodiscard]] const glm::vec2& getAbsoluteMousePosition() const { return m_mouseAbsolutePosition; }
+		[[nodiscard]] const glm::vec2& getRelativeMousePosition() const { return m_mouseRelativePosition; }
 		[[nodiscard]] const glm::vec2& getScrollOffset() const { return m_mouseScrollOffset; }
 
 	private:
 		std::reference_wrapper<Window> m_window;
 
-		glm::vec2 m_mousePosition{glm::vec2(0.0F)};
-		glm::vec2 m_mouseScrollOffset{glm::vec2(0.0F)};
+		glm::vec2 m_mouseAbsolutePosition{glm::vec2(0.0F, 0.0F)};
+		glm::vec2 m_mouseRelativePosition{glm::vec2(0.0F, 0.0F)};
+		glm::vec2 m_mouseLastPosition{glm::vec2(0.0F, 0.0F)};
+		glm::vec2 m_mouseScrollOffset{glm::vec2(0.0F, 0.0F)};
+
+		bool m_hadFirstMouseMovement{false};
 
 		std::unordered_set<int> m_keysDown;
 		std::unordered_set<int> m_keysPressed;
