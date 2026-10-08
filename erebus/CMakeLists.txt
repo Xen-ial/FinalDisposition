@@ -65,6 +65,12 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(thirdparty/assimp)
 
+# BOX3D Physics
+set(BOX3D_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(thirdparty/box3d)
+
 # Erebus specific
 file(GLOB_RECURSE EREBUS_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 add_library(erebus ${EREBUS_SOURCES})
@@ -88,4 +94,5 @@ target_link_libraries(erebus PUBLIC
         STB
         ktx
         assimp
+        box3d
 )
