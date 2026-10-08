@@ -40,22 +40,8 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(thirdparty/glfw-3.5.1)
 
-set(TINYOBJLOADER_USE_DOUBLE OFF CACHE BOOL "" FORCE)
-set(TINYOBJLOADER_WITH_PYTHON OFF CACHE BOOL "" FORCE)
-set(TINYOBJLOADER_PREFER_LOCAL_PYTHON_INSTALLATION OFF CACHE BOOL "" FORCE)
-set(TINYOBJLOADER_BUILD_TEST_LOADER OFF CACHE BOOL "" FORCE)
-set(TINYOBJLOADER_BUILD_OBJ_STICHER OFF CACHE BOOL "" FORCE)
-
-add_subdirectory(thirdparty/tinyobjloader)
-
 # stb
 add_subdirectory(thirdparty/stb)
-
-# Tiny obj loader
-set(TINYGLTF3_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(TINYGLTF3_INSTALL OFF CACHE BOOL "" FORCE)
-
-add_subdirectory(thirdparty/tinygltf)
 
 # KTX
 set(KTX_FEATURE_DOC OFF CACHE BOOL "" FORCE)
@@ -67,6 +53,17 @@ set(KTX_FEATURE_JS OFF CACHE BOOL "" FORCE)
 set(KTX_FEATURE_TOOLS OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(thirdparty/KTX-Software)
+
+# Assimp
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+set(ASSIMP_IGNORE_GIT_HASH ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_MINIZIP ON CACHE BOOL "" FORCE)
+set(ASSIMP_INJECT_DEBUG_POSTFIX OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(thirdparty/assimp)
 
 # Erebus specific
 file(GLOB_RECURSE EREBUS_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
@@ -88,8 +85,7 @@ target_link_libraries(erebus PUBLIC
         vulkan
         glm
         glfw
-        tinyobjloader
         STB
-        tinygltf3
         ktx
+        assimp
 )

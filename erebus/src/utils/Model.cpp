@@ -6,13 +6,15 @@
 
 namespace erb
 {
-	void Model::createBuffers(VkDevice& device, vk::raii::CommandPool& commandPool, vk::raii::Queue& targetQueue)
+#pragma region Mesh
+
+	void Mesh::createBuffers(VkDevice& device, vk::raii::CommandPool& commandPool, vk::raii::Queue& targetQueue)
 	{
 		createVertexBuffer(device, commandPool, targetQueue);
 		createIndexBuffer(device, commandPool, targetQueue);
 	}
 
-	void Model::createVertexBuffer(VkDevice& device, vk::raii::CommandPool& commandPool, vk::raii::Queue& targetQueue)
+	void Mesh::createVertexBuffer(VkDevice& device, vk::raii::CommandPool& commandPool, vk::raii::Queue& targetQueue)
 	{
 		vk::DeviceSize bufferSize = sizeof(m_verticies[0]) * m_verticies.size();
 
@@ -29,7 +31,7 @@ namespace erb
 		copyBuffer(device.getDevice(), commandPool, targetQueue, stagingBuffer, m_vertexBuffer, bufferSize);
 	}
 
-	void Model::createIndexBuffer(VkDevice& device, vk::raii::CommandPool& commandPool, vk::raii::Queue& targetQueue)
+	void Mesh::createIndexBuffer(VkDevice& device, vk::raii::CommandPool& commandPool, vk::raii::Queue& targetQueue)
 	{
 		vk::DeviceSize bufferSize = sizeof(m_indicies[0]) * m_indicies.size();
 
@@ -45,4 +47,32 @@ namespace erb
 
 		copyBuffer(device.getDevice(), commandPool, targetQueue, stagingBuffer, m_indexBuffer, bufferSize);
 	}
+
+#pragma endregion
+
+#pragma region Model
+
+	void Model::initModel(VkDevice& device, vk::raii::CommandPool& commandPool, vk::raii::Queue& targetQueue)
+	{
+		for (auto& mesh : m_meshes)
+			mesh.createBuffers(device, commandPool, targetQueue);
+	}
+
+	void Model::setTexture(Texture* texture)
+	{
+		for (auto& mesh : m_meshes)
+			mesh.setTexture(texture);
+	}
+
+	void Model::addMesh(Mesh mesh)
+	{
+		m_meshes.push_back(std::move(mesh));
+	}
+
+	void Model::reset()
+	{
+		m_meshes.clear();
+	}
+
+#pragma endregion
 } // namespace erb

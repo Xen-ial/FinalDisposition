@@ -8,49 +8,21 @@
 
 #include <cstdint>
 #include <string>
-#include <vector>
-#include <optional>
 
 namespace erb
 {
-	struct ObjectGpuResources
-	{
-		std::uint32_t poolIndex{};
-		std::uint32_t descriptorCountPerType{};
-
-		std::vector<vk::raii::Buffer>       uniformBuffers;
-		std::vector<vk::raii::DeviceMemory> uniformBuffersMemory;
-		std::vector<void*>                  mappedUniforms;
-
-		std::vector<vk::raii::DescriptorSet> descriptorSets;
-	};
-
-	struct RenderMaterials
-	{
-		RenderMaterials(Model* model, Texture* texture)
-		    : model(model), texture(texture) {}
-
-		RenderMaterials(Model* model) : model(model) {}
-		RenderMaterials(Texture* texture) : texture(texture) {}
-
-		Model*   model   = nullptr;
-		Texture* texture = nullptr;
-
-		Material material{};
-	};
-
 	struct RenderObject
 	{
 		RenderObject(std::uint32_t objId) : objId(objId) {}
 
-		RenderObject(std::uint32_t objId, RenderMaterials& renderMaterials)
-		    : objId(objId), materials(renderMaterials) {}
+		RenderObject(std::uint32_t objId, Model* model)
+		    : objId(objId), model(model) {}
 
 		RenderObject(std::uint32_t objId, std::string& objName)
 		    : objId(objId), objName(objName) {}
 
-		RenderObject(std::uint32_t objId, std::string& objName, RenderMaterials& renderMaterials)
-		    : objId(objId), objName(objName), materials(renderMaterials) {}
+		RenderObject(std::uint32_t objId, std::string& objName, Model* model)
+		    : objId(objId), objName(objName), model(model) {}
 
 		RenderObject() = default;
 
@@ -58,9 +30,10 @@ namespace erb
 		std::string   objName;
 
 		Transform transform{};
+		Model*    model = nullptr;
 
-		std::optional<RenderMaterials> materials;
-		ObjectGpuResources             gpu{};
+		void setModel(Model& model) { this->model = &model; }
+		void setTexture(Texture& texture) const { this->model->setTexture(&texture); }
 
 		bool shouldBeDestroyed{false};
 		bool hasBeenDestroyed{false};

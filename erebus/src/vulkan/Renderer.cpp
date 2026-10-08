@@ -471,7 +471,7 @@ namespace erb
 		    .binding         = 0,
 		    .descriptorType  = vk::DescriptorType::eUniformBuffer,
 		    .descriptorCount = 1,
-		    .stageFlags      = vk::ShaderStageFlagBits::eVertex};
+		    .stageFlags      = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment};
 
 		vk::DescriptorSetLayoutBinding textureLayout{
 		    .binding         = 1,
@@ -712,14 +712,23 @@ namespace erb
 	{
 		renderObject->objId = m_renderObjectId;
 
-		if (renderObject->materials->model != nullptr)
-			renderObject->materials->model->createBuffers(*m_device, m_commandPool, m_device->getGraphicsQueue());
+		if (renderObject->model != nullptr)
+			renderObject->model->initModel(*m_device, m_commandPool, m_device->getGraphicsQueue());
 		else
 			std::println("no model attached");
 
-		if (renderObject->materials->texture != nullptr)
-			renderObject->gpu = std::move(m_descriptorManager->createObject(renderObject->materials->texture->getTextureImageView(),
-			    renderObject->materials->texture->getTextureImageSampler()));
+		if (renderObject->model != nullptr)
+		{
+			for (auto& mesh : renderObject->model->getMesh())
+			{
+				auto* texture = mesh.getTexture();
+				if (texture == nullptr)
+					continue;
+
+				mesh.setGpuResource(m_descriptorManager->createObject(texture->getTextureImageView(),
+				    texture->getTextureImageSampler()));
+			}
+		}
 		else
 			std::println("no texture attached");
 
@@ -737,7 +746,9 @@ namespace erb
 			return;
 
 		renderObject->hasBeenDestroyed = true;
-		m_descriptorManager->releaseObject(renderObject->gpu);
+		for (auto& mesh : renderObject->model->getMesh())
+			m_descriptorManager->releaseObject(mesh.getGpuResources());
+
 		m_renderObjects.erase(object->first);
 	}
 
@@ -845,19 +856,22 @@ namespace erb
 			auto& renderObject = object.second;
 			if (renderObject->shouldBeDestroyed) continue;
 
-			auto& vertexBuffer = renderObject->materials->model->getVertexBuffer();
-			auto& indexBuffer  = renderObject->materials->model->getIndexBuffer();
+			for (auto& mesh : renderObject->model->getMesh())
+			{
+				auto& vertexBuffer = mesh.getVertexBuffer();
+				auto& indexBuffer  = mesh.getIndexBuffer();
 
-			auto indicies = renderObject->materials->model->getIndicies();
+				auto indicies = mesh.getIndicies();
 
-			commandBuffer.bindVertexBuffers(0, *vertexBuffer, {0});
-			commandBuffer.bindIndexBuffer(*indexBuffer, 0, vk::IndexTypeValue<decltype(indicies)::value_type>::value);
+				commandBuffer.bindVertexBuffers(0, *vertexBuffer, {0});
+				commandBuffer.bindIndexBuffer(*indexBuffer, 0, vk::IndexTypeValue<decltype(indicies)::value_type>::value);
 
-			Material mat = renderObject->materials->material;
-			pushMaterialProperties(commandBuffer, mat);
+				Material mat = mesh.getMaterial();
+				pushMaterialProperties(commandBuffer, mat);
 
-			VkDescriptorManager::bindObjectForDraw(commandBuffer, m_lightingPipeline.pipelineLayout, renderObject->gpu, m_frameIndex);
-			commandBuffer.drawIndexed(indicies.size(), 1, 0, 0, 0);
+				VkDescriptorManager::bindObjectForDraw(commandBuffer, m_lightingPipeline.pipelineLayout, mesh.getGpuResources(), m_frameIndex);
+				commandBuffer.drawIndexed(indicies.size(), 1, 0, 0, 0);
+			}
 		}
 
 		commandBuffer.endRendering();
@@ -892,7 +906,8 @@ namespace erb
 			    .camPos     = glm::vec4(camera.getPosition(), 1.0F),
 			    .lightCount = 0};
 
-			VkDescriptorManager::updateObjectForFrame(renderObject->gpu, m_frameIndex, ubo);
+			for (auto& mesh : renderObject->model->getMesh())
+				VkDescriptorManager::updateObjectForFrame(mesh.getGpuResources(), m_frameIndex, ubo);
 		}
 	}
 
@@ -1015,7 +1030,8 @@ namespace erb
 		for (auto& rObject : m_renderObjects)
 		{
 			auto [index, obj] = rObject;
-			m_descriptorManager->releaseObject(obj->gpu);
+			for (auto& mesh : obj->model->getMesh())
+				m_descriptorManager->releaseObject(mesh.getGpuResources());
 		}
 
 		m_resourceManager.clear();

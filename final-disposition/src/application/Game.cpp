@@ -1,8 +1,8 @@
-#include "GLFW/glfw3.h"
-#include "erebus/engine/Camera.h"
-#include "erebus/engine/Input.h"
-#include "erebus/vulkan/RenderObject.h"
 #include <application/Game.h>
+
+#include <erebus/engine/Camera.h>
+#include <erebus/engine/Input.h>
+#include <erebus/vulkan/RenderObject.h>
 
 #include <glm/ext/vector_float3.hpp>
 #include <glm/gtc/constants.hpp>
@@ -55,7 +55,9 @@ namespace fd
 		object.transform.setRotation(glm::vec3(0.0F, 0.0F, 0.0F));
 		object.transform.setScale(glm::vec3(0.5F, 0.5F, 0.5F));
 
-		object.materials.emplace(testModel, testTexture);
+		object.setModel(*testModel);
+		object.setTexture(*testTexture);
+
 		addEntity(object);
 	}
 

@@ -16,9 +16,17 @@ file(GLOB_RECURSE FINAL_DISPOSITION_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SO
 add_executable(final-disposition ${FINAL_DISPOSITION_SOURCES})
 
 target_include_directories(final-disposition PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_link_libraries(final-disposition PRIVATE
-    erebus
+        erebus
 )
+
+add_custom_target(COPY_ASSETS
+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/resources"
+        "$<TARGET_FILE_DIR:final-disposition>/resources"
+)
+
+add_dependencies(final-disposition COPY_ASSETS)

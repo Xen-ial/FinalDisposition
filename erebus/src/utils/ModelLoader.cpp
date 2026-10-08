@@ -1,71 +1,100 @@
-#include "erebus/utils/Model.h"
 #include <erebus/utils/ModelLoader.h>
+
+#include <erebus/utils/Model.h>
 #include <erebus/utils/Vertex.h>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 #include <print>
-#include <unordered_map>
-
-namespace objParser
-{
-	erb::Model parseObjModel(const std::string& path)
-	{
-		tinyobj::attrib_t attrib;
-
-		std::vector<tinyobj::shape_t>    shapes;
-		std::vector<tinyobj::material_t> materials;
-
-		std::string warn;
-		std::string err;
-
-		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str()))
-		{
-			std::println("failed to load model: {}", path);
-			return {};
-		}
-
-		std::unordered_map<erb::Vertex, std::uint32_t> uniqueVertices{};
-		std::vector<erb::Vertex>                       verticies;
-		std::vector<std::uint32_t>                     indicies;
-
-		for (const auto& shape : shapes)
-		{
-			for (const auto& index : shape.mesh.indices)
-			{
-				erb::Vertex vertex{};
-
-				vertex.position = {
-				    attrib.vertices[(3 * index.vertex_index) + 0],
-				    attrib.vertices[(3 * index.vertex_index) + 1],
-				    attrib.vertices[(3 * index.vertex_index) + 2]};
-
-				vertex.texCoord = {
-				    attrib.texcoords[(2 * index.texcoord_index) + 0],
-				    1.0 - attrib.texcoords[(2 * index.texcoord_index) + 1]};
-
-				auto [iter, inserted] = uniqueVertices.insert({vertex, static_cast<std::uint32_t>(verticies.size())});
-				if (inserted)
-					verticies.push_back(vertex);
-
-				indicies.push_back(iter->second);
-			}
-		}
-
-		erb::Model model;
-		model.setVerticies(verticies);
-		model.setIndicies(indicies);
-
-		return std::move(model);
-	}
-} // namespace objParser
 
 namespace erb
 {
 	void ModelLoader::parseModel(const std::string& path)
 	{
-		// TODO: Detect if its an obj file then parse if it is, otherwise detect if its a glb and parse that instead
-		m_model = objParser::parseObjModel(path);
+		Assimp::Importer importer;
+		const aiScene*   scene = importer.ReadFile(path,
+		    aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+
+		if (scene == nullptr || ((scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) != 0U) || scene->mRootNode == nullptr)
+		{
+			std::println("ERROR::ASSIMP:: {}", importer.GetErrorString());
+			return;
+		}
+
+		processNode(scene->mRootNode, scene);
+	}
+
+	void ModelLoader::processNode(aiNode* node, const aiScene* scene)
+	{
+		for (std::uint32_t i = 0; i < node->mNumMeshes; i++)
+		{
+			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+			m_model.addMesh(processMesh(mesh, scene));
+		}
+
+		for (std::uint32_t i = 0; i < node->mNumChildren; i++)
+			processNode(node->mChildren[i], scene);
+	}
+
+	Mesh ModelLoader::processMesh(aiMesh* mesh, const aiScene* scene)
+	{
+		Mesh                       resultMesh{};
+		std::vector<Vertex>        vertices;
+		std::vector<std::uint32_t> indices;
+
+		for (std::uint32_t i = 0; i < mesh->mNumVertices; i++)
+		{
+			Vertex    vertex;
+			glm::vec3 vert;
+
+			auto& meshVertices = mesh->mVertices[i];
+			vert.x             = meshVertices.x;
+			vert.y             = meshVertices.y;
+			vert.z             = meshVertices.z;
+			vertex.position    = vert;
+
+			if (mesh->HasNormals())
+			{
+				auto& meshNormals = mesh->mNormals[i];
+				vert.x            = meshNormals.x;
+				vert.y            = meshNormals.y;
+				vert.z            = meshNormals.z;
+				vertex.normal     = vert;
+			}
+
+			if (mesh->HasTextureCoords(0))
+			{
+				glm::vec2 tex;
+
+				auto& textureCoords = mesh->mTextureCoords[0][i];
+				tex.x               = textureCoords.x;
+				tex.y               = textureCoords.y;
+				vertex.texCoord     = tex;
+
+				auto& tangents = mesh->mTangents[i];
+				vert.x         = tangents.x;
+				vert.y         = tangents.y;
+				vert.z         = tangents.z;
+				vertex.tangent = glm::vec4(vert, 1.0F);
+			}
+			else
+				vertex.texCoord = glm::vec2(0.0F, 0.0F);
+
+			vertices.push_back(vertex);
+		}
+
+		for (std::uint32_t i = 0; i < mesh->mNumFaces; i++)
+		{
+			aiFace face = mesh->mFaces[i];
+			for (std::uint32_t j = 0; j < face.mNumIndices; j++)
+				indices.push_back(face.mIndices[j]);
+		}
+
+		resultMesh.setIndicies(indices);
+		resultMesh.setVerticies(vertices);
+
+		return std::move(resultMesh);
 	}
 } // namespace erb
