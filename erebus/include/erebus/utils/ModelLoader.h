@@ -14,8 +14,7 @@ namespace erb
 	public:
 		ModelLoader() = default;
 
-		void parseModel(const std::string& path);
-
+		void   parseModel(const std::string& path);
 		Model& getModel() { return m_model; }
 
 	private:

@@ -1,3 +1,4 @@
+#include "erebus/vulkan/UniformBuffer.h"
 #include "erebus/vulkan/VkDescriptorManager.h"
 #include "vulkan/vulkan.hpp"
 #include <erebus/vulkan/Renderer.h>
@@ -752,6 +753,31 @@ namespace erb
 		m_renderObjects.erase(object->first);
 	}
 
+	void Renderer::addPointLight(PointLight pointLight)
+	{
+		if (m_pointLights.size() == MAX_POINT_LIGHTS)
+		{
+			return;
+		}
+
+		m_pointLights.push_back(pointLight);
+	}
+
+	void Renderer::addSpotLight(SpotLight spotLight)
+	{
+		if (m_spotLights.size() == MAX_SPOT_LIGHTS)
+		{
+			return;
+		}
+
+		m_spotLights.push_back(spotLight);
+	}
+
+	void Renderer::setDirectionalLight(DirectionalLight dirLight)
+	{
+		m_directionalLight = dirLight;
+	}
+
 	Model Renderer::createModel(const std::string& path)
 	{
 		ModelLoader loadModel{};
@@ -903,8 +929,17 @@ namespace erb
 			    .proj  = camera.getProjectionMatrix(
 			        static_cast<float>(m_swapChain->getSwapChainExtent().width) /
 			        static_cast<float>(m_swapChain->getSwapChainExtent().height)),
-			    .camPos     = glm::vec4(camera.getPosition(), 1.0F),
-			    .lightCount = 0};
+			    .camPos   = glm::vec4(camera.getPosition(), 1.0F),
+			    .dirLight = m_directionalLight,
+			};
+
+			const auto pointCount = std::min(m_pointLights.size(), static_cast<std::size_t>(MAX_POINT_LIGHTS));
+			std::copy_n(m_pointLights.begin(), pointCount, ubo.pointLights.begin());
+			ubo.activePointLightCount = static_cast<float>(pointCount);
+
+			const auto spotCount = std::min(m_spotLights.size(), static_cast<std::size_t>(MAX_SPOT_LIGHTS));
+			std::copy_n(m_spotLights.begin(), spotCount, ubo.spotLights.begin());
+			ubo.activeSpotLightCount = static_cast<float>(spotCount);
 
 			for (auto& mesh : renderObject->model->getMesh())
 				VkDescriptorManager::updateObjectForFrame(mesh.getGpuResources(), m_frameIndex, ubo);
@@ -988,7 +1023,6 @@ namespace erb
 
 		commandBuffer.reset();
 		recordCommandBuffer(imageIndex);
-
 		updateUniformBuffers(camera);
 
 		auto& renderFinishedSemaphore = m_renderFinishedSemaphore[imageIndex];

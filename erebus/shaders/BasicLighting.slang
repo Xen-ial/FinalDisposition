@@ -34,6 +34,10 @@ struct LightingPushConstants
 [[vk::push_constant]]
 LightingPushConstants material;
 
+float3 directionalLight(DirectionalLight dLight, VSOutput input, float4 texColor, float3 normal, float3 viewDir);
+float3 pointLight(PointLight pLight, VSOutput input, float4 texColor, float3 normal, float3 viewDir);
+float3 spotLight(SpotLight sLight, VSOutput input, float4 texColor, float3 normal, float3 viewDir);
+
 [[shader("vertex")]]
 VSOutput vertMain(VSInput input)
 {
@@ -56,19 +60,87 @@ float4 fragMain(VSOutput input) : SV_Target
 {
 	float4 texColor = texSampler.Sample(input.TexCoord);
 	float3 normal   = normalize(input.Normal);
+	float3 viewDir  = normalize(ubo.camPos.xyz - input.WorldPos);
 
-	float3 lightDir   = normalize(float3(1.0F, 1.0F, 1.0F));
-	float3 viewDir    = normalize(ubo.camPos.xyz - input.WorldPos);
+	float3 result = directionalLight(ubo.dirLight, input, texColor, normal, viewDir);
+
+	for (int i = 0; i < ubo.activePointLightCount; i++)
+	{
+		PointLight pLight = ubo.pointLights[i];
+		result += pointLight(pLight, input, texColor, normal, viewDir);
+	}
+
+	for (int i = 0; i < ubo.activeSpotLightCount; i++)
+	{
+		SpotLight sLight = ubo.spotLights[i];
+		result += spotLight(sLight, input, texColor, normal, viewDir);
+	}
+
+	return float4(result, texColor.a);
+}
+
+float3 directionalLight(DirectionalLight dLight, VSOutput input, float4 texColor, float3 normal, float3 viewDir)
+{
+	float3 lightDir   = normalize(dLight.direction.xyz);
 	float3 reflectDir = reflect(-lightDir, normal);
 
 	float3 ambient = material.ambientColor.rgb * float3(0.1F, 0.1F, 0.1F);
 
-	float  diff    = max(dot(normal, lightDir), 0.0F);
-	float3 diffuse = diff * material.diffuseColor.rgb;
+	float  diff     = max(dot(normal, lightDir), 0.0F);
+	float3 radiance = dLight.color.rgb * dLight.color.w;
+	float3 diffuse  = diff * material.diffuseColor.rgb * radiance;
 
 	float  spec     = pow(max(dot(viewDir, reflectDir), 0.0F), material.shininess);
 	float3 specular = spec * material.specularColor.rgb;
 
-	float3 result = (ambient + diffuse + specular) * texColor.rgb;
-	return float4(result, texColor.a);
+	return (ambient + diffuse + specular) * texColor.rgb;
+}
+
+float3 pointLight(PointLight pLight, VSOutput input, float4 texColor, float3 normal, float3 viewDir)
+{
+	float3 toLight         = pLight.position.xyz - input.WorldPos;
+	float  distanceToLight = length(toLight);
+	float3 reflectDir      = reflect(-toLight, normal);
+
+	float3 light       = toLight / max(distanceToLight, 0.0001F);
+	float4 params      = pLight.params;
+	float  attenuation = 1.0F / max(params.x + params.y * distanceToLight + params.z * distanceToLight * distanceToLight, 0.0001F);
+	float3 radiance    = pLight.color.rgb * pLight.color.w * attenuation;
+
+	float3 ambient = material.ambientColor.rgb * float3(0.1F, 0.1F, 0.1F);
+
+	float  diff    = max(dot(normal, toLight), 0.0F);
+	float3 diffuse = diff * material.diffuseColor.rgb * radiance;
+
+	float  spec     = pow(max(dot(viewDir, reflectDir), 0.0F), material.shininess);
+	float3 specular = spec * material.specularColor.rgb * radiance;
+
+	return (ambient + diffuse + specular) * texColor.rgb;
+}
+
+float3 spotLight(SpotLight sLight, VSOutput input, float4 texColor, float3 normal, float3 viewDir)
+{
+	float3 fromLightToFragment = normalize(input.WorldPos - sLight.position.xyz);
+
+	float  distanceToLight = length(fromLightToFragment);
+	float3 rayDir          = fromLightToFragment / max(distanceToLight, 0.0001F);
+
+	float3 reflectDir = reflect(-rayDir, normal);
+
+	float theta = dot(rayDir, normalize(sLight.direction.xyz));
+	float cone  = smoothstep(sLight.outerCos, sLight.innerCos, theta);
+
+	float4 params      = sLight.params;
+	float  attenuation = 1.0F / max(params.x + params.y * distanceToLight + params.z * distanceToLight * distanceToLight, 0.0001F);
+	float3 radiance    = sLight.color.rgb * sLight.color.w * attenuation * cone;
+
+	float3 ambient = material.ambientColor.rgb * float3(0.1F, 0.1F, 0.1F);
+
+	float  diff    = max(dot(normal, distanceToLight), 0.0F);
+	float3 diffuse = diff * material.diffuseColor.rgb * radiance;
+
+	float  spec     = pow(max(dot(viewDir, reflectDir), 0.0F), material.shininess);
+	float3 specular = spec * material.specularColor.rgb * radiance;
+
+	return (ambient + diffuse + specular) * texColor.rgb;
 }

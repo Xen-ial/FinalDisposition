@@ -1,5 +1,6 @@
 #pragma once
 #include "erebus/engine/Camera.h"
+#include "erebus/vulkan/UniformBuffer.h"
 #include <erebus/vulkan/Renderer.h>
 #include <erebus/vulkan/RenderObject.h>
 
@@ -49,6 +50,11 @@ namespace erb
 		Camera3D& getCamera() { return m_camera; }
 
 		float deltaTime() const { return m_renderer.getDeltaTime(); }
+
+		std::vector<PointLight>& getPointLights() { return m_renderer.getPointLights(); }
+		std::vector<SpotLight>&  getSpotLights() { return m_renderer.getSpotLights(); }
+
+		DirectionalLight& getDirectionalLight() { return m_renderer.getDirectionalLight(); }
 
 	private:
 		std::reference_wrapper<Window> m_window;

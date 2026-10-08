@@ -84,8 +84,6 @@ namespace fd
 		const auto& mousePos = input.getRelativeMousePosition();
 		camera.processMouseMovement(mousePos.x, mousePos.y);
 
-		std::println("CameraPos: {} {} {}", camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
-
 		destroyOldEntities();
 	}
 

@@ -1,4 +1,5 @@
 #pragma once
+#include "erebus/vulkan/UniformBuffer.h"
 #include <erebus/engine/Window.h>
 #include <erebus/engine/Camera.h>
 
@@ -46,6 +47,15 @@ namespace erb
 
 		void addRenderObject(RenderObject* renderObject);
 		void removeRenderObject(RenderObject* renderObject);
+
+		void addPointLight(PointLight pointLight);
+		void addSpotLight(SpotLight spotLight);
+		void setDirectionalLight(DirectionalLight dirLight);
+
+		std::vector<PointLight>& getPointLights() { return m_pointLights; }
+		std::vector<SpotLight>&  getSpotLights() { return m_spotLights; }
+
+		DirectionalLight& getDirectionalLight() { return m_directionalLight; }
 
 		static Model createModel(const std::string& path);
 		Texture      createTexture(const std::string& path, bool useMipMaps = false);
@@ -122,6 +132,11 @@ namespace erb
 
 		std::uint32_t                                    m_renderObjectId{};
 		std::unordered_map<std::uint32_t, RenderObject*> m_renderObjects;
+
+		std::vector<PointLight> m_pointLights;
+		std::vector<SpotLight>  m_spotLights;
+
+		DirectionalLight m_directionalLight{};
 
 		bool createInstance();
 		bool setupDebugMessenger();

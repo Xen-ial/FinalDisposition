@@ -39,6 +39,8 @@ namespace erb
 
 		[[nodiscard]] glm::vec3 getPosition() const { return m_position; }
 		[[nodiscard]] glm::vec3 getFront() const { return m_front; }
+		[[nodiscard]] glm::vec3 getUp() const { return m_up; }
+		[[nodiscard]] glm::vec3 getRight() const { return m_right; }
 
 		[[nodiscard]] float getFOV() const { return m_fov; }
 		[[nodiscard]] float getMouseSensitvitiy() const { return m_mouseSensitivity; }
