@@ -16,8 +16,8 @@ namespace erb
 
 	struct DirectionalLight
 	{
-		alignas(16) glm::vec4 direction = glm::vec4(1.0F, 1.0F, 1.0F, 1.0F);
-		alignas(16) glm::vec4 color     = glm::vec4(1.0F, 1.0F, 1.0F, 2.5F);
+		alignas(16) glm::vec4 direction = glm::vec4(0.0F, 0.0F, 1.0F, 1.0F);
+		alignas(16) glm::vec4 color     = glm::vec4(0.4F, 0.1F, 0.1F, 1.0F);
 	};
 
 	struct PointLight

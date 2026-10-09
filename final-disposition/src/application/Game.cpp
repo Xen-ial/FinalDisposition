@@ -46,14 +46,14 @@ namespace fd
 
 		input.setCursorMode(erb::CursorModes::CURSOR_DISABLED);
 
-		auto* testModel   = engine.createModelResource("testModel", "resources/models/cube.obj");
-		auto* testTexture = engine.createTextureResource("testTexture", "resources/textures/cube.jpg");
+		auto* testModel   = engine.createModelResource("testModel", "resources/models/HorrorRoom.obj");
+		auto* testTexture = engine.createTextureResource("testTexture", "resources/textures/RoomAtlas.png");
 
 		erb::RenderObject object;
 
-		object.transform.setPosition(glm::vec3(-2.0F, 0.0F, -1.0F));
+		object.transform.setPosition(glm::vec3(0.0F, 0.0F, 0.0F));
 		object.transform.setRotation(glm::vec3(0.0F, 0.0F, 0.0F));
-		object.transform.setScale(glm::vec3(0.5F, 0.5F, 0.5F));
+		object.transform.setScale(glm::vec3(1.0F, 1.0F, 1.0F));
 
 		object.setModel(*testModel);
 		object.setTexture(*testTexture);
