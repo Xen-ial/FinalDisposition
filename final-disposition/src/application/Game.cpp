@@ -1,3 +1,4 @@
+#include "GLFW/glfw3.h"
 #include <application/Game.h>
 
 #include <erebus/engine/Camera.h>
@@ -59,6 +60,8 @@ namespace fd
 		object.setTexture(*testTexture);
 
 		addEntity(object);
+
+		engine.getCamera().setFov(80.0F);
 	}
 
 	void Game::onUpdate()
@@ -81,8 +84,21 @@ namespace fd
 		if (input.isKeyDown(GLFW_KEY_A))
 			camera.processKeyboard(erb::CameraMovement::LEFT, deltaTime);
 
-		const auto& mousePos = input.getRelativeMousePosition();
-		camera.processMouseMovement(mousePos.x, mousePos.y);
+		if (input.isKeyPressed(GLFW_KEY_ESCAPE))
+		{
+			m_hasFocus = !m_hasFocus;
+
+			if (m_hasFocus)
+				input.setCursorMode(erb::CursorModes::CURSOR_DISABLED);
+			else
+				input.setCursorMode(erb::CursorModes::DEFAULT);
+		}
+
+		if (m_hasFocus)
+		{
+			const auto& mousePos = input.getRelativeMousePosition();
+			camera.processMouseMovement(mousePos.x, mousePos.y);
+		}
 
 		destroyOldEntities();
 	}

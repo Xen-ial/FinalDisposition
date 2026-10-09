@@ -19,6 +19,8 @@ namespace fd
 
 		std::vector<erb::RenderObject> m_gameObjects;
 
+		bool m_hasFocus{true};
+
 		void onInit();
 		void onUpdate();
 		void onDraw();
