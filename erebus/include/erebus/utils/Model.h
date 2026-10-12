@@ -46,9 +46,6 @@ namespace erb
 		void     setTexture(Texture* texture) { m_texture = texture; }
 		Texture* getTexture() { return m_texture; }
 
-		void                setGpuResource(ObjectGpuResources gpuResources) { m_gpuResource = std::move(gpuResources); }
-		ObjectGpuResources& getGpuResources() { return m_gpuResource; }
-
 	private:
 		std::vector<Vertex>        m_verticies;
 		std::vector<std::uint32_t> m_indicies;
@@ -59,10 +56,12 @@ namespace erb
 		vk::raii::Buffer       m_indexBuffer       = nullptr;
 		vk::raii::DeviceMemory m_indexBufferMemory = nullptr;
 
-		Material           m_material{};
-		ObjectGpuResources m_gpuResource{};
+		Material m_material{};
 
 		Texture* m_texture = nullptr;
+
+		bool m_isInitialized{false};
+		bool m_gpuResourceSet{false};
 
 		void createVertexBuffer(VkDevice& device, vk::raii::CommandPool& commandPool, vk::raii::Queue& targetQueue);
 		void createIndexBuffer(VkDevice& device, vk::raii::CommandPool& commandPool, vk::raii::Queue& targetQueue);

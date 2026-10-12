@@ -10,8 +10,11 @@ namespace erb
 
 	void Mesh::createBuffers(VkDevice& device, vk::raii::CommandPool& commandPool, vk::raii::Queue& targetQueue)
 	{
+		if (m_isInitialized) return;
 		createVertexBuffer(device, commandPool, targetQueue);
 		createIndexBuffer(device, commandPool, targetQueue);
+
+		m_isInitialized = true;
 	}
 
 	void Mesh::createVertexBuffer(VkDevice& device, vk::raii::CommandPool& commandPool, vk::raii::Queue& targetQueue)

@@ -54,8 +54,9 @@ namespace erb
 {
 #pragma region Initialization
 
-	bool Renderer::init(const std::string& applicationName)
+	bool Renderer::init(const std::string& applicationName, std::vector<RenderObject>* renderObjects)
 	{
+		m_renderObjects   = &*renderObjects;
 		m_applicationName = applicationName;
 
 		if (m_hasInitialized)
@@ -713,12 +714,12 @@ namespace erb
 	{
 		renderObject->objId = m_renderObjectId;
 
-		if (renderObject->model != nullptr)
+		if (renderObject->hasModelSet)
 			renderObject->model->initModel(*m_device, m_commandPool, m_device->getGraphicsQueue());
 		else
 			std::println("no model attached");
 
-		if (renderObject->model != nullptr)
+		if (renderObject->hasTextureSet)
 		{
 			for (auto& mesh : renderObject->model->getMesh())
 			{
@@ -726,31 +727,27 @@ namespace erb
 				if (texture == nullptr)
 					continue;
 
-				mesh.setGpuResource(m_descriptorManager->createObject(texture->getTextureImageView(),
-				    texture->getTextureImageSampler()));
+				renderObject->createGpuResource(mesh,
+				    m_descriptorManager->createObject(texture->getTextureImageView(), texture->getTextureImageSampler()));
 			}
 		}
 		else
 			std::println("no texture attached");
 
-		auto [iter, sucess] = m_renderObjects.try_emplace(m_renderObjectId, renderObject);
-		auto& object        = iter->second;
-
-		if (sucess)
-			m_renderObjectId++;
+		m_renderObjectId++;
 	}
 
 	void Renderer::removeRenderObject(RenderObject* renderObject)
 	{
-		auto object = m_renderObjects.find(renderObject->objId);
-		if (object == m_renderObjects.end())
+		auto object = getRenderObjectIndex(*renderObject);
+		if (object.first == -1)
 			return;
 
 		renderObject->hasBeenDestroyed = true;
 		for (auto& mesh : renderObject->model->getMesh())
-			m_descriptorManager->releaseObject(mesh.getGpuResources());
+			m_descriptorManager->releaseObject(renderObject->getResource(mesh));
 
-		m_renderObjects.erase(object->first);
+		m_renderObjects->erase(m_renderObjects->begin() + object.first);
 	}
 
 	void Renderer::addPointLight(PointLight pointLight)
@@ -877,12 +874,13 @@ namespace erb
 
 		commandBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), swapChainExtent));
 
-		for (auto& object : m_renderObjects)
+		for (auto& object : *m_renderObjects)
 		{
-			auto& renderObject = object.second;
-			if (renderObject->shouldBeDestroyed) continue;
+			if (object.shouldBeDestroyed) continue;
+			if (!object.hasModelSet || !object.hasTextureSet)
+				continue;
 
-			for (auto& mesh : renderObject->model->getMesh())
+			for (auto& mesh : object.model->getMesh())
 			{
 				auto& vertexBuffer = mesh.getVertexBuffer();
 				auto& indexBuffer  = mesh.getIndexBuffer();
@@ -895,7 +893,7 @@ namespace erb
 				Material mat = mesh.getMaterial();
 				pushMaterialProperties(commandBuffer, mat);
 
-				VkDescriptorManager::bindObjectForDraw(commandBuffer, m_lightingPipeline.pipelineLayout, mesh.getGpuResources(), m_frameIndex);
+				VkDescriptorManager::bindObjectForDraw(commandBuffer, m_lightingPipeline.pipelineLayout, object.getResource(mesh), m_frameIndex);
 				commandBuffer.drawIndexed(indicies.size(), 1, 0, 0, 0);
 			}
 		}
@@ -918,13 +916,14 @@ namespace erb
 
 	void Renderer::updateUniformBuffers(Camera3D& camera)
 	{
-		for (auto& object : m_renderObjects)
+		for (auto& renderObject : *m_renderObjects)
 		{
-			auto& renderObject = object.second;
-			if (renderObject->shouldBeDestroyed) continue;
+			if (renderObject.shouldBeDestroyed) continue;
+			if (!renderObject.hasModelSet || !renderObject.hasTextureSet)
+				continue;
 
 			UniformBufferObject ubo{
-			    .model = renderObject->transform.getMatrix(),
+			    .model = renderObject.transform.getMatrix(),
 			    .view  = camera.getViewMatrix(),
 			    .proj  = camera.getProjectionMatrix(
 			        static_cast<float>(m_swapChain->getSwapChainExtent().width) /
@@ -941,8 +940,8 @@ namespace erb
 			std::copy_n(m_spotLights.begin(), spotCount, ubo.spotLights.begin());
 			ubo.activeSpotLightCount = static_cast<float>(spotCount);
 
-			for (auto& mesh : renderObject->model->getMesh())
-				VkDescriptorManager::updateObjectForFrame(mesh.getGpuResources(), m_frameIndex, ubo);
+			for (auto& mesh : renderObject.model->getMesh())
+				VkDescriptorManager::updateObjectForFrame(renderObject.getResource(mesh), m_frameIndex, ubo);
 		}
 	}
 
@@ -962,18 +961,16 @@ namespace erb
 	{
 		std::vector<RenderObject*> toRemove;
 
-		for (auto& object : m_renderObjects)
+		for (auto& renderObject : *m_renderObjects)
 		{
-			auto& renderObject = object.second;
-
-			if (!renderObject->shouldBeDestroyed) continue;
-			if (renderObject->framesPassedBeforeDestroy < RMAX_FRAMES_IN_FLIGHT + 1)
+			if (!renderObject.shouldBeDestroyed) continue;
+			if (renderObject.framesPassedBeforeDestroy < RMAX_FRAMES_IN_FLIGHT + 1)
 			{
-				renderObject->framesPassedBeforeDestroy++;
+				renderObject.framesPassedBeforeDestroy++;
 				continue;
 			}
 
-			toRemove.push_back(renderObject);
+			toRemove.push_back(&renderObject);
 		}
 
 		for (auto& object : toRemove)
@@ -1056,16 +1053,30 @@ namespace erb
 		m_frameIndex = (m_frameIndex + 1) % RMAX_FRAMES_IN_FLIGHT;
 	}
 
+	std::pair<std::int32_t, erb::RenderObject*> Renderer::getRenderObjectIndex(erb::RenderObject& object)
+	{
+		auto target = std::ranges::find_if(*m_renderObjects,
+		    [&object](erb::RenderObject& candidate)
+		    {
+			    return &candidate == &object;
+		    });
+
+		if (target == m_renderObjects->end())
+			return {-1, target.base()};
+
+		auto index = std::distance(m_renderObjects->begin(), target);
+		return {static_cast<std::int32_t>(index), target.base()};
+	}
+
 #pragma endregion
 
 	void Renderer::cleanup()
 	{
 		m_device->getDevice().waitIdle();
-		for (auto& rObject : m_renderObjects)
+		for (auto& rObject : *m_renderObjects)
 		{
-			auto [index, obj] = rObject;
-			for (auto& mesh : obj->model->getMesh())
-				m_descriptorManager->releaseObject(mesh.getGpuResources());
+			for (auto& mesh : rObject.model->getMesh())
+				m_descriptorManager->releaseObject(rObject.getResource(mesh));
 		}
 
 		m_resourceManager.clear();

@@ -41,7 +41,7 @@ namespace erb
 	public:
 		Renderer(Window& window) : m_window(window) {}
 
-		bool init(const std::string& applicationName);
+		bool init(const std::string& applicationName, std::vector<RenderObject>* renderObjects);
 
 		void setFramebufferSize(std::uint32_t width, std::uint32_t height);
 
@@ -71,14 +71,13 @@ namespace erb
 		Pipeline& getUnlitPipeline() { return m_unlitPipeline; }
 		Pipeline& getLightingPipeline() { return m_lightingPipeline; }
 
-		bool getHasInitialized() const { return m_hasInitialized; }
+		[[nodiscard]] bool getHasInitialized() const { return m_hasInitialized; }
 
-		std::unordered_map<std::uint32_t, RenderObject*>& getRenderObjects() { return m_renderObjects; }
+		[[nodiscard]] std::uint32_t getWidth() const { return m_width; }
+		[[nodiscard]] std::uint32_t getHeight() const { return m_height; }
 
-		std::uint32_t getWidth() const { return m_width; }
-		std::uint32_t getHeight() const { return m_height; }
-
-		float getDeltaTime() const { return m_deltaTime; }
+		[[nodiscard]] float getDeltaTime() const { return m_deltaTime; }
+		[[nodiscard]] float getLastFrameTime() const { return m_lastFrame; }
 
 	private:
 		std::string m_applicationName;
@@ -130,13 +129,13 @@ namespace erb
 		std::vector<vk::raii::Semaphore> m_presentCompletedSemaphore;
 		std::vector<vk::raii::Fence>     m_inFlightFences;
 
-		std::uint32_t                                    m_renderObjectId{};
-		std::unordered_map<std::uint32_t, RenderObject*> m_renderObjects;
-
 		std::vector<PointLight> m_pointLights;
 		std::vector<SpotLight>  m_spotLights;
 
 		DirectionalLight m_directionalLight{};
+
+		std::uint32_t              m_renderObjectId{};
+		std::vector<RenderObject>* m_renderObjects = nullptr;
 
 		bool createInstance();
 		bool setupDebugMessenger();
@@ -161,5 +160,7 @@ namespace erb
 		void updateUniformBuffers(Camera3D& camera);
 		void updateFrameTime();
 		void pushMaterialProperties(vk::CommandBuffer commandBuffer, const Material& material) const;
+
+		std::pair<std::int32_t, RenderObject*> getRenderObjectIndex(RenderObject& object);
 	};
 } // namespace erb

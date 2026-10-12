@@ -6,13 +6,14 @@ namespace erb
 {
 	bool Engine::init(const std::string& applicationName)
 	{
-		if (!m_renderer.init(applicationName))
+		if (!m_renderer.init(applicationName, &m_renderObjects))
 		{
 			std::println("failed to init renderer in engine");
 			return false;
 		}
 
 		m_input.init();
+		m_physicsManager.init();
 		return true;
 	}
 
@@ -66,6 +67,7 @@ namespace erb
 
 	void Engine::render()
 	{
+		m_physicsManager.update(m_renderObjects, m_renderer.getDeltaTime());
 		m_renderer.render(m_camera);
 		m_input.resetFrame();
 	}
@@ -73,5 +75,58 @@ namespace erb
 	void Engine::cleanup()
 	{
 		m_renderer.cleanup();
+		m_physicsManager.cleanup();
+	}
+
+	std::pair<std::int32_t, erb::RenderObject*> Engine::getRenderObjectIndex(erb::RenderObject& object)
+	{
+		auto target = std::ranges::find_if(m_renderObjects,
+		    [&object](erb::RenderObject& candidate)
+		    {
+			    return &candidate == &object;
+		    });
+
+		if (target == m_renderObjects.end())
+			return {-1, target.base()};
+
+		auto index = std::distance(m_renderObjects.begin(), target);
+		return {static_cast<std::int32_t>(index), target.base()};
+	}
+
+	void Engine::removeEntity(erb::RenderObject& object)
+	{
+		auto [index, target] = getRenderObjectIndex(object);
+		if (index == -1)
+			return;
+
+		destroyEntity(*target);
+	}
+
+	void Engine::addEntity(erb::RenderObject& object)
+	{
+		m_renderObjects.push_back(std::move(object));
+		auto& gameObject = m_renderObjects.at(m_renderObjects.size() - 1);
+		createEntity(&gameObject);
+	}
+
+	void Engine::destroyOldEntities()
+	{
+		for (auto& object : m_renderObjects)
+		{
+			auto [index, renderObject] = getRenderObjectIndex(object);
+			if (object.hasBeenDestroyed)
+				m_renderObjects.erase(m_renderObjects.begin() + index);
+		}
+	}
+
+	RenderObject& Engine::getNamedRenderObject(const std::string& name)
+	{
+		for (auto& object : m_renderObjects)
+		{
+			if (object.objName != name) continue;
+			return object;
+		}
+
+		return m_renderObjects[m_renderObjects.size() - 1];
 	}
 } // namespace erb

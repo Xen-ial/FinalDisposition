@@ -1,17 +1,18 @@
 #pragma once
-#include "erebus/engine/Camera.h"
 #include "erebus/vulkan/UniformBuffer.h"
 #include <erebus/vulkan/Renderer.h>
 #include <erebus/vulkan/RenderObject.h>
 
 #include <erebus/engine/Window.h>
 #include <erebus/engine/Input.h>
+#include <erebus/engine/Camera.h>
 
 #include <erebus/utils/Model.h>
 #include <erebus/utils/Texture.h>
 #include <erebus/utils/Material.h>
 #include <erebus/utils/ResourceManager.h>
 #include <erebus/utils/Transform.h>
+#include <erebus/utils/PhysicsManager.h>
 
 #include <functional>
 
@@ -26,8 +27,8 @@ namespace erb
 
 		bool init(const std::string& applicationName);
 
-		void createEntity(RenderObject* renderObject);
-		void destroyEntity(RenderObject& renderObject);
+		void removeEntity(RenderObject& object);
+		void addEntity(RenderObject& object);
 
 		void setCamera(Camera3D& camera);
 
@@ -41,13 +42,16 @@ namespace erb
 		Texture* getTexture(const std::string& name);
 
 		void render();
-
 		void cleanup();
 
-		Renderer& getRenderer() { return m_renderer; }
-		Window&   getWindow() { return m_window; }
-		Input&    getInput() { return m_input; }
-		Camera3D& getCamera() { return m_camera; }
+		Renderer&       getRenderer() { return m_renderer; }
+		Window&         getWindow() { return m_window; }
+		Input&          getInput() { return m_input; }
+		Camera3D&       getCamera() { return m_camera; }
+		PhysicsManager& getPhysicsManager() { return m_physicsManager; }
+
+		std::vector<RenderObject>& getRenderObjects() { return m_renderObjects; }
+		RenderObject& getNamedRenderObject(const std::string& name);
 
 		float deltaTime() const { return m_renderer.getDeltaTime(); }
 
@@ -56,11 +60,21 @@ namespace erb
 
 		DirectionalLight& getDirectionalLight() { return m_renderer.getDirectionalLight(); }
 
+		std::pair<std::int32_t, RenderObject*> getRenderObjectIndex(RenderObject& object);
+
 	private:
 		std::reference_wrapper<Window> m_window;
 
-		Camera3D m_camera;
-		Input    m_input;
-		Renderer m_renderer;
+		std::vector<RenderObject> m_renderObjects;
+
+		Camera3D       m_camera;
+		Input          m_input;
+		Renderer       m_renderer;
+		PhysicsManager m_physicsManager;
+
+		void destroyOldEntities();
+
+		void createEntity(RenderObject* renderObject);
+		void destroyEntity(RenderObject& renderObject);
 	};
 } // namespace erb
