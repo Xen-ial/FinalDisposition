@@ -75,7 +75,7 @@ namespace erb
 	void Engine::cleanup()
 	{
 		m_renderer.cleanup();
-		m_physicsManager.cleanup();
+		m_physicsManager.cleanup(m_renderObjects);
 	}
 
 	std::pair<std::int32_t, erb::RenderObject*> Engine::getRenderObjectIndex(erb::RenderObject& object)
@@ -115,7 +115,10 @@ namespace erb
 		{
 			auto [index, renderObject] = getRenderObjectIndex(object);
 			if (object.hasBeenDestroyed)
+			{
+				PhysicsManager::destroyPhysicsObject(*renderObject);
 				m_renderObjects.erase(m_renderObjects.begin() + index);
+			}
 		}
 	}
 

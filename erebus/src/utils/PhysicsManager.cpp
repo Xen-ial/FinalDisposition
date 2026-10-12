@@ -1,3 +1,5 @@
+#include "box3d/collision.h"
+#include "box3d/id.h"
 #include "box3d/math_functions.h"
 #include <erebus/utils/PhysicsManager.h>
 
@@ -13,9 +15,27 @@ namespace erb
 		m_worldId          = b3CreateWorld(&m_worldDef);
 	}
 
-	void PhysicsManager::cleanup()
+	void PhysicsManager::cleanup(std::vector<RenderObject>& renderObjects)
 	{
+		for (auto& object : renderObjects)
+		{
+			for (auto& meshData : object.meshColliderData)
+				b3DestroyMesh(meshData.second.meshDataPtr);
+
+			b3DestroyBody(object.physicsId);
+			object.physicsId = b3_nullBodyId;
+		}
+
 		b3DestroyWorld(m_worldId);
+	}
+
+	void PhysicsManager::destroyPhysicsObject(RenderObject& renderObject)
+	{
+		for (auto& meshData : renderObject.meshColliderData)
+			b3DestroyMesh(meshData.second.meshDataPtr);
+
+		b3DestroyBody(renderObject.physicsId);
+		renderObject.physicsId = b3_nullBodyId;
 	}
 
 	void PhysicsManager::update(std::vector<RenderObject>& renderObjects, const float elapsedTime)
@@ -58,7 +78,6 @@ namespace erb
 		if (m_isPhysicsUpdatesEnabled)
 		{
 			m_accumulator += elapsedTime;
-
 			while (m_accumulator >= m_fixedTime)
 			{
 				b3World_Step(m_worldId, m_fixedTime, m_subStepCount);
@@ -126,6 +145,7 @@ namespace erb
 		    .z = quatRotation.z};
 
 		bodyDef.rotation.s = quatRotation.w;
+		bodyDef.userData   = &renderObject;
 
 		renderObject.physicsId        = b3CreateBody(m_worldId, &bodyDef);
 		renderObject.isPhysicsEnabled = true;

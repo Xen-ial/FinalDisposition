@@ -1080,6 +1080,7 @@ namespace erb
 		}
 
 		m_resourceManager.clear();
+		m_swapChain->cleanup();
 	}
 
 } // namespace erb

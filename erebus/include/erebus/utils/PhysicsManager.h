@@ -34,8 +34,10 @@ namespace erb
 		PhysicsManager() = default;
 
 		void init();
-		void cleanup();
+		void cleanup(std::vector<RenderObject>& renderObjects);
 		void update(std::vector<RenderObject>& renderObjects, float elapsedTime);
+
+		static void destroyPhysicsObject(RenderObject& renderObject);
 
 		void createPhysicsBody(RenderObject& renderObject, PhysicsObjectType objectType);
 

@@ -1,5 +1,4 @@
 #pragma once
-#include "vulkan/vulkan.hpp"
 #include <erebus/vulkan/VkDevice.h>
 #include <erebus/engine/Window.h>
 
