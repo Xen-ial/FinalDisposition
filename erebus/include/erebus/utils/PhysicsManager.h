@@ -1,5 +1,6 @@
 #pragma once
 #include <erebus/vulkan/RenderObject.h>
+#include <erebus/utils/Raycast.h>
 
 #include <box3d/box3d.h>
 #include <box3d/id.h>
@@ -33,7 +34,7 @@ namespace erb
 	public:
 		PhysicsManager() = default;
 
-		void init();
+		void init(std::vector<RenderObject>& renderObjects);
 		void cleanup(std::vector<RenderObject>& renderObjects);
 		void update(std::vector<RenderObject>& renderObjects, float elapsedTime);
 
@@ -54,9 +55,13 @@ namespace erb
 
 		glm::vec3& getGravity() { return m_gravity; }
 
+		[[nodiscard]] const Raycast& getRaycastManager() const { return m_raycastManager; }
+
 	private:
 		b3WorldDef m_worldDef{};
 		b3WorldId  m_worldId{};
+
+		Raycast m_raycastManager;
 
 		float m_fixedTime{1.0F / 60.0F};
 		int   m_subStepCount{4};

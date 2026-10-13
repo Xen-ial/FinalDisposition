@@ -8,11 +8,13 @@
 
 namespace erb
 {
-	void PhysicsManager::init()
+	void PhysicsManager::init(std::vector<RenderObject>& renderObjects)
 	{
 		m_worldDef         = b3DefaultWorldDef();
 		m_worldDef.gravity = {.x = 0.0F, .y = -15.0F, .z = 0.0F};
 		m_worldId          = b3CreateWorld(&m_worldDef);
+
+		m_raycastManager = Raycast(m_worldId, renderObjects);
 	}
 
 	void PhysicsManager::cleanup(std::vector<RenderObject>& renderObjects)

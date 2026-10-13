@@ -13,7 +13,7 @@ namespace erb
 		}
 
 		m_input.init();
-		m_physicsManager.init();
+		m_physicsManager.init(m_renderObjects);
 		return true;
 	}
 

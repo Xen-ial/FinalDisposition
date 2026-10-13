@@ -1,15 +1,17 @@
-#include "GLFW/glfw3.h"
-#include "erebus/utils/PhysicsManager.h"
 #include <application/Game.h>
 
 #include <erebus/engine/Camera.h>
 #include <erebus/engine/Input.h>
 #include <erebus/vulkan/RenderObject.h>
+#include <erebus/utils/PhysicsManager.h>
 
 #include <glm/ext/vector_float3.hpp>
 #include <glm/gtc/constants.hpp>
 
+#include <GLFW/glfw3.h>
+
 #include <print>
+#include <cstdlib>
 
 namespace fd
 {
@@ -110,7 +112,7 @@ namespace fd
 			engine.getPhysicsManager().setArePhysicsUpdatesEnabled(isEnabled);
 		}
 
-		if (input.isKeyPressed(GLFW_KEY_ESCAPE))
+		if (input.isKeyPressed(GLFW_KEY_F1))
 		{
 			m_hasFocus = !m_hasFocus;
 
@@ -118,6 +120,17 @@ namespace fd
 				input.setCursorMode(erb::CursorModes::CURSOR_DISABLED);
 			else
 				input.setCursorMode(erb::CursorModes::DEFAULT);
+		}
+
+		if (input.isKeyPressed(GLFW_KEY_ESCAPE))
+			std::exit(EXIT_SUCCESS);
+
+		if (input.isKeyPressed(GLFW_KEY_R))
+		{
+			auto raycast = engine.getRaycastManager();
+			auto hit     = raycast.castRay(camera.getPosition(), camera.getFront() * 10.0F);
+			if (hit.hasHit)
+				std::println("Hit: {}", hit.renderObject->objId);
 		}
 
 		if (m_hasFocus)

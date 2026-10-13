@@ -13,6 +13,7 @@
 #include <erebus/utils/ResourceManager.h>
 #include <erebus/utils/Transform.h>
 #include <erebus/utils/PhysicsManager.h>
+#include <erebus/utils/Raycast.h>
 
 #include <functional>
 
@@ -61,6 +62,8 @@ namespace erb
 		DirectionalLight& getDirectionalLight() { return m_renderer.getDirectionalLight(); }
 
 		std::pair<std::int32_t, RenderObject*> getRenderObjectIndex(RenderObject& object);
+
+		const Raycast& getRaycastManager() const { return m_physicsManager.getRaycastManager(); }
 
 	private:
 		std::reference_wrapper<Window> m_window;
