@@ -1,4 +1,5 @@
 #pragma once
+#include <erebus/utils/Transform.h>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -26,21 +27,27 @@ namespace erb
 	public:
 		Camera3D(glm::vec3 position = glm::vec3(0.0F, 0.0F, 0.0F), glm::vec3 up = glm::vec3(0.0F, 1.0F, 0.0F),
 		    float yaw = -90.0F, float pitch = 0.0F)
-		    : m_position(position), m_up(up), m_yaw(yaw), m_pitch(pitch) {};
+		    : m_up(up), m_yaw(yaw), m_pitch(pitch)
+		{
+			m_transform.setPosition(position);
+		};
 
 		void processKeyboard(CameraMovement direction, float deltaTime);
 		void processMouseMovement(float xOffset, float yOffset, bool constrainPitch = true);
-		void processMouseScroll(float yOffset);
-
+		
 		void setPosition(const glm::vec3& position);
 		void setMovementSpeed(float newSpeed);
 		void setMouseSensitivity(float sensitivity);
 		void setFov(float fov);
 
-		[[nodiscard]] glm::vec3 getPosition() const { return m_position; }
-		[[nodiscard]] glm::vec3 getFront() const { return m_front; }
+		[[nodiscard]] const Transform& getTransform() const { return m_transform; }
+
+		[[nodiscard]] glm::vec3 getPosition() { return m_transform.getPosition(); }
+		[[nodiscard]] glm::vec3 getRotation() { return m_transform.getRotation(); }
+
 		[[nodiscard]] glm::vec3 getUp() const { return m_up; }
 		[[nodiscard]] glm::vec3 getRight() const { return m_right; }
+		[[nodiscard]] glm::vec3 getWorldUp() const { return m_worldUp; }
 
 		[[nodiscard]] float getFOV() const { return m_fov; }
 		[[nodiscard]] float getMouseSensitvitiy() const { return m_mouseSensitivity; }
@@ -50,11 +57,11 @@ namespace erb
 		[[nodiscard]] glm::mat4 getProjectionMatrix(float apsectRatio, float nearPlane = 0.1F, float farPlane = 100.0F) const;
 
 	private:
-		glm::vec3 m_position{glm::vec3(0.0F, 0.0F, 0.0F)};
-		glm::vec3 m_front{glm::vec3(0.0F)};
 		glm::vec3 m_up{glm::vec3(0.0F, 1.0F, 0.0F)};
 		glm::vec3 m_right{glm::vec3(0.0F)};
 		glm::vec3 m_worldUp{glm::vec3(0.0F, 1.0F, 0.0F)};
+
+		Transform m_transform{};
 
 		float m_yaw{-90.0F};
 		float m_pitch{};

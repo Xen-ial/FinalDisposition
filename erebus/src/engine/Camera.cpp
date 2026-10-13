@@ -1,37 +1,42 @@
-#include <algorithm>
 #include <erebus/engine/Camera.h>
+
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
+
+#include <algorithm>
 
 namespace erb
 {
 	void Camera3D::processKeyboard(CameraMovement direction, const float deltaTime)
 	{
 		const float velocity = m_movementSpeed * deltaTime;
+		auto        position = m_transform.getPosition();
+		auto        rotation = m_transform.getRotation();
 
 		switch (direction)
 		{
 		case CameraMovement::FORWARD:
-			m_position += m_front * velocity;
+			position += rotation * velocity;
 			break;
 		case CameraMovement::BACKWARD:
-			m_position -= m_front * velocity;
+			position -= rotation * velocity;
 			break;
 		case CameraMovement::LEFT:
-			m_position -= m_right * velocity;
+			position -= m_right * velocity;
 			break;
 		case CameraMovement::RIGHT:
-			m_position += m_right * velocity;
+			position += m_right * velocity;
 			break;
 		case CameraMovement::UP:
-			m_position += m_up * velocity;
+			position += m_up * velocity;
 			break;
 		case CameraMovement::DOWN:
-			m_position -= m_up * velocity;
+			position -= m_up * velocity;
 			break;
 		}
 
 		updateCameraVectors();
+		m_transform.setPosition(position);
 	}
 
 	void Camera3D::processMouseMovement(float xOffset, float yOffset, const bool constrainPitch)
@@ -55,20 +60,22 @@ namespace erb
 
 	void Camera3D::updateCameraVectors()
 	{
-		glm::vec3 newFront;
+		glm::vec3 newRot;
 
-		newFront.x = static_cast<float>(cos(glm::radians(m_yaw))) * static_cast<float>(cos(glm::radians(m_pitch)));
-		newFront.y = static_cast<float>(sin(glm::radians(m_pitch)));
-		newFront.z = static_cast<float>(sin(glm::radians(m_yaw))) * static_cast<float>(cos(glm::radians(m_pitch)));
+		newRot.x = static_cast<float>(cos(glm::radians(m_yaw))) * static_cast<float>(cos(glm::radians(m_pitch)));
+		newRot.y = static_cast<float>(sin(glm::radians(m_pitch)));
+		newRot.z = static_cast<float>(sin(glm::radians(m_yaw))) * static_cast<float>(cos(glm::radians(m_pitch)));
 
-		m_front = glm::normalize(newFront);
-		m_right = glm::normalize(glm::cross(m_front, m_worldUp));
-		m_up    = glm::normalize(glm::cross(m_right, m_front));
+		m_transform.setRotation(glm::normalize(newRot));
+		auto rotation = m_transform.getRotation();
+
+		m_right = glm::normalize(glm::cross(rotation, m_worldUp));
+		m_up    = glm::normalize(glm::cross(m_right, rotation));
 	}
 
 	glm::mat4 Camera3D::getViewMatrix() const
 	{
-		return glm::lookAt(m_position, m_position + m_front, m_up);
+		return glm::lookAt(m_transform.getPosition(), m_transform.getPosition() + m_transform.getRotation(), m_up);
 	}
 
 	glm::mat4 Camera3D::getProjectionMatrix(const float apsectRatio, const float nearPlane, const float farPlane) const
@@ -78,7 +85,7 @@ namespace erb
 
 	void Camera3D::setPosition(const glm::vec3& position)
 	{
-		m_position = position;
+		m_transform.setPosition(position);
 	}
 
 	void Camera3D::setMovementSpeed(const float newSpeed)

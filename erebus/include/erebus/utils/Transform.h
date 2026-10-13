@@ -48,9 +48,9 @@ namespace erb
 			m_matrixDirty = true;
 		}
 
-		glm::vec3 getPosition() { return m_position; }
-		glm::vec3 getRotation() { return m_rotation; }
-		glm::vec3 getScale() { return m_scale; }
+		[[nodiscard]] const glm::vec3& getPosition() const { return m_position; }
+		[[nodiscard]] const glm::vec3& getRotation() const { return m_rotation; }
+		[[nodiscard]] const glm::vec3& getScale() const { return m_scale; }
 
 		const glm::mat4& getMatrix()
 		{

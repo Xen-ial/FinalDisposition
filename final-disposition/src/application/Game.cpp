@@ -128,7 +128,7 @@ namespace fd
 		if (input.isKeyPressed(GLFW_KEY_R))
 		{
 			auto raycast = engine.getRaycastManager();
-			auto hit     = raycast.castRay(camera.getPosition(), camera.getFront() * 10.0F);
+			auto hit     = raycast.castRay(camera.getPosition(), camera.getRotation() * 10.0F);
 			if (hit.hasHit)
 				std::println("Hit: {}", hit.renderObject->objId);
 		}
