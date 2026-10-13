@@ -1,25 +1,22 @@
+#include <algorithm>
 #include <erebus/engine/Camera.h>
-
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
-
-#include <algorithm>
 
 namespace erb
 {
 	void Camera3D::processKeyboard(CameraMovement direction, const float deltaTime)
 	{
 		const float velocity = m_movementSpeed * deltaTime;
-		auto        position = m_transform.getPosition();
-		auto        rotation = m_transform.getRotation();
+		auto position = m_transform.getPosition();
 
 		switch (direction)
 		{
 		case CameraMovement::FORWARD:
-			position += rotation * velocity;
+			position += m_front * velocity;
 			break;
 		case CameraMovement::BACKWARD:
-			position -= rotation * velocity;
+			position -= m_front * velocity;
 			break;
 		case CameraMovement::LEFT:
 			position -= m_right * velocity;
@@ -60,22 +57,20 @@ namespace erb
 
 	void Camera3D::updateCameraVectors()
 	{
-		glm::vec3 newRot;
+		glm::vec3 newFront;
 
-		newRot.x = static_cast<float>(cos(glm::radians(m_yaw))) * static_cast<float>(cos(glm::radians(m_pitch)));
-		newRot.y = static_cast<float>(sin(glm::radians(m_pitch)));
-		newRot.z = static_cast<float>(sin(glm::radians(m_yaw))) * static_cast<float>(cos(glm::radians(m_pitch)));
+		newFront.x = static_cast<float>(cos(glm::radians(m_yaw))) * static_cast<float>(cos(glm::radians(m_pitch)));
+		newFront.y = static_cast<float>(sin(glm::radians(m_pitch)));
+		newFront.z = static_cast<float>(sin(glm::radians(m_yaw))) * static_cast<float>(cos(glm::radians(m_pitch)));
 
-		m_transform.setRotation(glm::normalize(newRot));
-		auto rotation = m_transform.getRotation();
-
-		m_right = glm::normalize(glm::cross(rotation, m_worldUp));
-		m_up    = glm::normalize(glm::cross(m_right, rotation));
+		m_front = glm::normalize(newFront);
+		m_right = glm::normalize(glm::cross(m_front, m_worldUp));
+		m_up    = glm::normalize(glm::cross(m_right, m_front));
 	}
 
 	glm::mat4 Camera3D::getViewMatrix() const
 	{
-		return glm::lookAt(m_transform.getPosition(), m_transform.getPosition() + m_transform.getRotation(), m_up);
+		return glm::lookAt(m_transform.getPosition(), m_transform.getPosition() + m_front, m_up);
 	}
 
 	glm::mat4 Camera3D::getProjectionMatrix(const float apsectRatio, const float nearPlane, const float farPlane) const

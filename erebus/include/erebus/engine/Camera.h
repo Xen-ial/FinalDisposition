@@ -45,9 +45,9 @@ namespace erb
 		[[nodiscard]] glm::vec3 getPosition() { return m_transform.getPosition(); }
 		[[nodiscard]] glm::vec3 getRotation() { return m_transform.getRotation(); }
 
+		[[nodiscard]] glm::vec3 getFront() const { return m_front; }
 		[[nodiscard]] glm::vec3 getUp() const { return m_up; }
 		[[nodiscard]] glm::vec3 getRight() const { return m_right; }
-		[[nodiscard]] glm::vec3 getWorldUp() const { return m_worldUp; }
 
 		[[nodiscard]] float getFOV() const { return m_fov; }
 		[[nodiscard]] float getMouseSensitvitiy() const { return m_mouseSensitivity; }
@@ -57,6 +57,7 @@ namespace erb
 		[[nodiscard]] glm::mat4 getProjectionMatrix(float apsectRatio, float nearPlane = 0.1F, float farPlane = 100.0F) const;
 
 	private:
+		glm::vec3 m_front{glm::vec3(0.0F)};
 		glm::vec3 m_up{glm::vec3(0.0F, 1.0F, 0.0F)};
 		glm::vec3 m_right{glm::vec3(0.0F)};
 		glm::vec3 m_worldUp{glm::vec3(0.0F, 1.0F, 0.0F)};
