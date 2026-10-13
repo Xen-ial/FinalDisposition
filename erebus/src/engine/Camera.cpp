@@ -8,7 +8,7 @@ namespace erb
 	void Camera3D::processKeyboard(CameraMovement direction, const float deltaTime)
 	{
 		const float velocity = m_movementSpeed * deltaTime;
-		auto position = m_transform.getPosition();
+		auto        position = m_transform.getPosition();
 
 		switch (direction)
 		{
@@ -41,27 +41,45 @@ namespace erb
 		xOffset *= m_mouseSensitivity;
 		yOffset *= m_mouseSensitivity;
 
-		m_yaw += xOffset;
-		m_pitch += yOffset;
+		auto rotation = getRotation();
+
+		rotation.y += xOffset;
+		rotation.x += yOffset;
 
 		if (constrainPitch)
 		{
 			const float maxNegativePitch = -89.0F;
 			const float maxPositivePitch = 89.0F;
 
-			m_pitch = std::clamp(m_pitch, maxNegativePitch, maxPositivePitch);
+			rotation.x = std::clamp(rotation.x, maxNegativePitch, maxPositivePitch);
 		}
 
+		m_transform.setRotation(rotation);
+		updateCameraVectors();
+	}
+
+	void Camera3D::setRotation(glm::vec3 rotation, const bool constrainPitch)
+	{
+		if (constrainPitch)
+		{
+			const float maxNegativePitch = -89.0F;
+			const float maxPositivePitch = 89.0F;
+
+			rotation.x = std::clamp(rotation.x, maxNegativePitch, maxPositivePitch);
+		}
+
+		m_transform.setRotation(rotation);
 		updateCameraVectors();
 	}
 
 	void Camera3D::updateCameraVectors()
 	{
 		glm::vec3 newFront;
+		auto      rotation = getRotation();
 
-		newFront.x = static_cast<float>(cos(glm::radians(m_yaw))) * static_cast<float>(cos(glm::radians(m_pitch)));
-		newFront.y = static_cast<float>(sin(glm::radians(m_pitch)));
-		newFront.z = static_cast<float>(sin(glm::radians(m_yaw))) * static_cast<float>(cos(glm::radians(m_pitch)));
+		newFront.x = static_cast<float>(cos(glm::radians(rotation.y))) * static_cast<float>(cos(glm::radians(rotation.x)));
+		newFront.y = static_cast<float>(sin(glm::radians(rotation.x)));
+		newFront.z = static_cast<float>(sin(glm::radians(rotation.y))) * static_cast<float>(cos(glm::radians(rotation.x)));
 
 		m_front = glm::normalize(newFront);
 		m_right = glm::normalize(glm::cross(m_front, m_worldUp));

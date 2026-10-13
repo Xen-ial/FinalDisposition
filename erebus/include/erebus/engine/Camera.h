@@ -27,15 +27,18 @@ namespace erb
 	public:
 		Camera3D(glm::vec3 position = glm::vec3(0.0F, 0.0F, 0.0F), glm::vec3 up = glm::vec3(0.0F, 1.0F, 0.0F),
 		    float yaw = -90.0F, float pitch = 0.0F)
-		    : m_up(up), m_yaw(yaw), m_pitch(pitch)
+		    : m_up(up)
 		{
 			m_transform.setPosition(position);
+			m_transform.setRotation({pitch, yaw, 0.0F});
 		};
 
 		void processKeyboard(CameraMovement direction, float deltaTime);
 		void processMouseMovement(float xOffset, float yOffset, bool constrainPitch = true);
-		
+
 		void setPosition(const glm::vec3& position);
+		void setRotation(glm::vec3 rotation, bool constrainPitch = false);
+
 		void setMovementSpeed(float newSpeed);
 		void setMouseSensitivity(float sensitivity);
 		void setFov(float fov);
@@ -63,9 +66,6 @@ namespace erb
 		glm::vec3 m_worldUp{glm::vec3(0.0F, 1.0F, 0.0F)};
 
 		Transform m_transform{};
-
-		float m_yaw{-90.0F};
-		float m_pitch{};
 
 		float m_movementSpeed{20.0F};
 		float m_mouseSensitivity{1.0F};
