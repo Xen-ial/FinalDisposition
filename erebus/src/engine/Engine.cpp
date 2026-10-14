@@ -14,6 +14,8 @@ namespace erb
 
 		m_input.init();
 		m_physicsManager.init(m_renderObjects);
+
+		setCamera(m_defaultCamera);
 		return true;
 	}
 
@@ -24,7 +26,7 @@ namespace erb
 
 	void Engine::setCamera(Camera3D& camera)
 	{
-		m_camera = camera;
+		m_camera = &camera;
 	}
 
 	void Engine::destroyEntity(RenderObject& renderObject)
@@ -91,7 +93,7 @@ namespace erb
 	{
 		fixedUpdate();
 
-		m_renderer.render(m_camera);
+		m_renderer.render(*m_camera);
 		m_input.resetFrame();
 	}
 

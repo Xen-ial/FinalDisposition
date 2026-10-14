@@ -56,7 +56,7 @@ namespace erb
 		Renderer&       getRenderer() { return m_renderer; }
 		Window&         getWindow() { return m_window; }
 		Input&          getInput() { return m_input; }
-		Camera3D&       getCamera() { return m_camera; }
+		Camera3D&       getCamera() { return *m_camera; }
 		PhysicsManager& getPhysicsManager() { return m_physicsManager; }
 
 		std::vector<RenderObject>& getRenderObjects() { return m_renderObjects; }
@@ -73,15 +73,19 @@ namespace erb
 
 		const Raycast& getRaycastManager() const { return m_physicsManager.getRaycastManager(); }
 
+		Camera3D& getDefaultCamera() { return m_defaultCamera; }
+
 	private:
 		std::reference_wrapper<Window> m_window;
 
 		std::vector<RenderObject> m_renderObjects;
 
-		Camera3D       m_camera;
 		Input          m_input;
 		Renderer       m_renderer;
 		PhysicsManager m_physicsManager;
+
+		Camera3D* m_camera = nullptr;
+		Camera3D  m_defaultCamera;
 
 		float m_accumulator{};
 

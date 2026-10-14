@@ -15,7 +15,8 @@ namespace fd
 {
 	void FPController::init()
 	{
-		m_engine->getCamera().setFov(80.0F);
+		m_fpCamera.setFov(80.0F);
+		m_engine->setCamera(m_fpCamera);
 
 		auto& physics = m_engine->getPhysicsManager();
 
@@ -46,10 +47,8 @@ namespace fd
 		auto& input    = m_engine->getInput();
 		auto  mousePos = input.getRelativeMousePosition();
 
-		auto& camera = m_engine->getCamera();
-
-		camera.setPosition(fpController->transform.getPosition());
-		camera.processMouseMovement(mousePos.x, mousePos.y);
+		m_fpCamera.setPosition(fpController->transform.getPosition());
+		m_fpCamera.processMouseMovement(mousePos.x, mousePos.y);
 	}
 
 	void FPController::updatePhysicalMovement(float deltaTime)
@@ -64,10 +63,9 @@ namespace fd
 		auto& physics = m_engine->getPhysicsManager();
 
 		auto  position = fpController->transform.getPosition();
-		auto& camera   = m_engine->getCamera();
 
-		glm::vec3 originCameraFront = camera.getFront();
-		glm::vec3 originCameraRight = camera.getRight();
+		glm::vec3 originCameraFront = m_fpCamera.getFront();
+		glm::vec3 originCameraRight = m_fpCamera.getRight();
 
 		glm::vec3 cameraFront = glm::normalize(glm::vec3(originCameraFront.x, 0.0F, originCameraFront.z));
 		glm::vec3 cameraRight = glm::normalize(glm::vec3(originCameraRight.x, 0.0F, originCameraRight.z));

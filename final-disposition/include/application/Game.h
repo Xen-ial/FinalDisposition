@@ -24,7 +24,9 @@ namespace fd
 		void onDraw();
 		void onResize(int width, int height);
 		void onCleanup();
-
 		void cleanup();
+
+		void initResources();
+		void initEditorResources();
 	};
 } // namespace fd

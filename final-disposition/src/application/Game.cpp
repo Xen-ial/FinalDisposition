@@ -12,8 +12,16 @@
 
 #include <cstdlib>
 
+#ifdef FINAL_DISPOSITION_EDITOR_MODE
+constexpr bool EDITOR_MODE = true;
+#else
+constexpr bool EDITOR_MODE = false;
+#endif
+
 namespace fd
 {
+#pragma region Initialization
+
 	Game::Game()
 	{
 		m_app.init("Final Disposition", 800, 600);
@@ -37,27 +45,11 @@ namespace fd
 		    { onCleanup(); });
 	}
 
-	void Game::run()
-	{
-		m_app.run();
-	}
-
-	void Game::onInit()
+	void Game::initResources()
 	{
 		auto& input   = m_app.getInput();
 		auto& engine  = m_app.getEngine();
 		auto& physics = engine.getPhysicsManager();
-
-		m_playerCharacter = Player(engine);
-		m_playerCharacter.init();
-		m_playerCharacter.setPlayerPosition(glm::vec3(-4.0F, 8.5F, 0.0F));
-
-		physics.setArePhysicsUpdatesEnabled(true);
-
-		input.setCursorMode(erb::CursorModes::CURSOR_DISABLED);
-
-		auto* testModel   = engine.createModelResource("testModel", "resources/models/cube.obj");
-		auto* testTexture = engine.createTextureResource("testTexture", "resources/textures/cube.jpg");
 
 		auto* horrorRoomModel   = engine.createModelResource("HorrorRoom", "resources/models/HorrorRoom.obj");
 		auto* horrorRoomTexture = engine.createTextureResource("HorrorRoomTexture", "resources/textures/RoomAtlas.png");
@@ -71,6 +63,10 @@ namespace fd
 		erb::PhysicsManager::createMeshShape(horrorRoom);
 
 		engine.addEntity(horrorRoom);
+
+		// Test model for physics (DELETE ME LATER)
+		auto* testModel   = engine.createModelResource("testModel", "resources/models/cube.obj");
+		auto* testTexture = engine.createTextureResource("testTexture", "resources/textures/cube.jpg");
 
 		erb::RenderObject object2;
 		object2.objName = "box";
@@ -88,12 +84,43 @@ namespace fd
 		engine.addEntity(object2);
 	}
 
+	void Game::onInit()
+	{
+		auto& input   = m_app.getInput();
+		auto& engine  = m_app.getEngine();
+		auto& physics = engine.getPhysicsManager();
+
+		physics.setArePhysicsUpdatesEnabled(true);
+		input.setCursorMode(erb::CursorModes::CURSOR_DISABLED);
+
+		if (!EDITOR_MODE)
+		{
+			m_playerCharacter = Player(engine);
+			m_playerCharacter.init();
+			m_playerCharacter.setPlayerPosition(glm::vec3(-4.0F, 8.5F, 0.0F));
+		}
+
+		initResources();
+	}
+
+#pragma endregion
+
+#pragma region GameLoop
+
+	void Game::run()
+	{
+		m_app.run();
+	}
+
 	void Game::onFixedUpdate()
 	{
 		auto&       engine    = m_app.getEngine();
 		const float deltaTime = engine.deltaTime();
 
-		m_playerCharacter.fixedUpdate(deltaTime);
+		if (!EDITOR_MODE)
+		{
+			m_playerCharacter.fixedUpdate(deltaTime);
+		}
 	}
 
 	void Game::onUpdate()
@@ -103,20 +130,6 @@ namespace fd
 		auto& camera = engine.getCamera();
 
 		const float deltaTime = engine.deltaTime();
-
-		m_playerCharacter.update(deltaTime);
-
-		// if (input.isKeyDown(GLFW_KEY_W))
-		// 	camera.processKeyboard(erb::CameraMovement::FORWARD, deltaTime);
-
-		// if (input.isKeyDown(GLFW_KEY_S))
-		// 	camera.processKeyboard(erb::CameraMovement::BACKWARD, deltaTime);
-
-		// if (input.isKeyDown(GLFW_KEY_D))
-		// 	camera.processKeyboard(erb::CameraMovement::RIGHT, deltaTime);
-
-		// if (input.isKeyDown(GLFW_KEY_A))
-		// 	camera.processKeyboard(erb::CameraMovement::LEFT, deltaTime);
 
 		if (input.isKeyPressed(GLFW_KEY_F1))
 		{
@@ -131,11 +144,31 @@ namespace fd
 		if (input.isKeyPressed(GLFW_KEY_ESCAPE))
 			std::exit(EXIT_SUCCESS);
 
-		// if (m_hasFocus)
-		// {
-		// 	const auto& mousePos = input.getRelativeMousePosition();
-		// 	camera.processMouseMovement(mousePos.x, mousePos.y);
-		// }
+		if (!EDITOR_MODE)
+		{
+			m_playerCharacter.update(deltaTime);
+		}
+
+		if (EDITOR_MODE)
+		{
+			if (input.isKeyDown(GLFW_KEY_W))
+				camera.processKeyboard(erb::CameraMovement::FORWARD, deltaTime);
+
+			if (input.isKeyDown(GLFW_KEY_S))
+				camera.processKeyboard(erb::CameraMovement::BACKWARD, deltaTime);
+
+			if (input.isKeyDown(GLFW_KEY_D))
+				camera.processKeyboard(erb::CameraMovement::RIGHT, deltaTime);
+
+			if (input.isKeyDown(GLFW_KEY_A))
+				camera.processKeyboard(erb::CameraMovement::LEFT, deltaTime);
+
+			if (m_hasFocus)
+			{
+				const auto& mousePos = input.getRelativeMousePosition();
+				camera.processMouseMovement(mousePos.x, mousePos.y);
+			}
+		}
 	}
 
 	void Game::onDraw()
@@ -146,6 +179,10 @@ namespace fd
 	{
 	}
 
+#pragma endregion
+
+#pragma region CleanUp
+
 	void Game::onCleanup()
 	{
 	}
@@ -154,4 +191,6 @@ namespace fd
 	{
 		m_app.cleanup();
 	}
+
+#pragma endregion
 } // namespace fd
