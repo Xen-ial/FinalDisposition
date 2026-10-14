@@ -48,8 +48,8 @@ namespace erb
 
 		void update(std::vector<RenderObject>& renderObjects);
 
-		void syncTransformsToPhysics(std::vector<RenderObject>& renderObjects);
-		void syncPhysicsToTransforms(std::vector<RenderObject>& renderObjects);
+		static void syncTransformsToPhysics(std::vector<RenderObject>& renderObjects);
+		static void syncPhysicsToTransforms(std::vector<RenderObject>& renderObjects);
 
 		void        createPhysicsBody(RenderObject& renderObject, PhysicsObjectType objectType);
 		static void destroyPhysicsObject(RenderObject& renderObject);

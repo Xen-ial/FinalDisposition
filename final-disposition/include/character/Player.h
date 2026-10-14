@@ -2,8 +2,6 @@
 #include <erebus/engine/Engine.h>
 #include <character/FPController.h>
 
-// TODO: Expand PhysicsManager to support characters -> first person character
-// TODO: Create movement for the first person controller
 // TODO: Setup interaction with environment inside the first person controller
 
 namespace fd

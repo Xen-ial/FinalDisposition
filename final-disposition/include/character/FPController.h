@@ -25,11 +25,8 @@ namespace fd
 			return object.value();
 		}
 
-		void setWalkSpeed(float speed) { m_walkSpeed = speed; }
-		void setMouseSensitivity(float sens) { m_mouseSensitivity = sens; }
-
+		void                setMouseSensitivity(float sens) { m_mouseSensitivity = sens; }
 		[[nodiscard]] float getMouseSens() const { return m_mouseSensitivity; }
-		[[nodiscard]] float getWalkSpeed() const { return m_walkSpeed; }
 
 	private:
 		erb::Camera3D m_fpCamera;
@@ -55,10 +52,10 @@ namespace fd
 		bool m_isWalking{false};
 		bool m_isRunning{false};
 		bool m_isAllowedToJump{true};
+		bool m_isAllowedToRun{true};
+		bool m_overrideBaseMovement{false};
 		bool m_isGrounded{false};
 		bool m_hasHitGround{false};
-		bool m_overrideBaseMovement{false};
-
 		bool m_wasGrounded{false};
 
 		void syncCameraMovement();

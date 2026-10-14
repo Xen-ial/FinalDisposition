@@ -72,7 +72,7 @@ namespace erb
 
 	void Engine::fixedUpdate()
 	{
-		m_physicsManager.syncTransformsToPhysics(m_renderObjects);
+		PhysicsManager::syncTransformsToPhysics(m_renderObjects);
 
 		m_accumulator += m_renderer.getDeltaTime();
 		while (m_accumulator >= m_physicsManager.getFixedTimeStep())
@@ -84,7 +84,7 @@ namespace erb
 			m_accumulator -= m_physicsManager.getFixedTimeStep();
 		}
 
-		m_physicsManager.syncPhysicsToTransforms(m_renderObjects);
+		PhysicsManager::syncPhysicsToTransforms(m_renderObjects);
 	}
 
 	void Engine::render()
