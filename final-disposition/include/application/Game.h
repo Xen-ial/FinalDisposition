@@ -1,5 +1,6 @@
 #pragma once
 #include <erebus/engine/App.h>
+#include <character/Player.h>
 
 namespace fd
 {
@@ -14,6 +15,8 @@ namespace fd
 		erb::App m_app;
 
 		bool m_hasFocus{true};
+
+		Player m_playerCharacter;
 
 		void onInit();
 		void onUpdate();

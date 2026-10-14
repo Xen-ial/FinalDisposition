@@ -1,7 +1,9 @@
-#include <algorithm>
 #include <erebus/engine/Camera.h>
+
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
+
+#include <algorithm>
 
 namespace erb
 {
@@ -58,20 +60,6 @@ namespace erb
 		updateCameraVectors();
 	}
 
-	void Camera3D::setRotation(glm::vec3 rotation, const bool constrainPitch)
-	{
-		if (constrainPitch)
-		{
-			const float maxNegativePitch = -89.0F;
-			const float maxPositivePitch = 89.0F;
-
-			rotation.x = std::clamp(rotation.x, maxNegativePitch, maxPositivePitch);
-		}
-
-		m_transform.setRotation(rotation);
-		updateCameraVectors();
-	}
-
 	void Camera3D::updateCameraVectors()
 	{
 		glm::vec3 newFront;
@@ -99,6 +87,20 @@ namespace erb
 	void Camera3D::setPosition(const glm::vec3& position)
 	{
 		m_transform.setPosition(position);
+	}
+
+	void Camera3D::setRotation(glm::vec3 rotation, const bool constrainPitch)
+	{
+		if (constrainPitch)
+		{
+			const float maxNegativePitch = -89.0F;
+			const float maxPositivePitch = 89.0F;
+
+			rotation.x = std::clamp(rotation.x, maxNegativePitch, maxPositivePitch);
+		}
+
+		m_transform.setRotation(rotation);
+		updateCameraVectors();
 	}
 
 	void Camera3D::setMovementSpeed(const float newSpeed)

@@ -124,6 +124,9 @@ namespace erb
 		case PhysicsObjectType::DYNAMIC_OBJECT:
 			bodyDef.type = b3_dynamicBody;
 			break;
+		case PhysicsObjectType::KINEMATIC_OBJECT:
+			bodyDef.type = b3_kinematicBody;
+			break;
 		}
 
 		auto& transform = renderObject.transform;
@@ -160,6 +163,9 @@ namespace erb
 		b3ShapeDef shapeDef            = b3DefaultShapeDef();
 		shapeDef.density               = dynamicMaterial.density;
 		shapeDef.baseMaterial.friction = dynamicMaterial.friction;
+
+		if (dynamicMaterial.dampening > -1.0F)
+			b3Body_SetLinearDamping(renderObject.physicsId, dynamicMaterial.dampening);
 
 		b3CreateHullShape(renderObject.physicsId, &shapeDef, &boxHull.base);
 	}
@@ -206,5 +212,56 @@ namespace erb
 
 			b3ShapeId shapeId = b3CreateMeshShape(renderObject.physicsId, &shapeDef, data.meshDataPtr, {.x = 1.0F, .y = 1.0F, .z = 1.0F});
 		}
+	}
+
+	void PhysicsManager::createCapsuleShape(RenderObject& renderObject, const CapsuleCreationInfo& info, const DynamicPhysicsMaterial& dynamicMaterial)
+	{
+		b3Capsule capsule{};
+		capsule.center1 = {.x = info.center1.x, .y = info.center1.y, .z = info.center1.z};
+		capsule.center2 = {.x = info.center2.x, .y = info.center2.y, .z = info.center2.z};
+		capsule.radius  = info.radius;
+
+		b3ShapeDef shapeDef            = b3DefaultShapeDef();
+		shapeDef.density               = dynamicMaterial.density;
+		shapeDef.baseMaterial.friction = dynamicMaterial.friction;
+
+		b3ShapeId shapeId = b3CreateCapsuleShape(renderObject.physicsId, &shapeDef, &capsule);
+	}
+
+	void PhysicsManager::setLinearVelocity(RenderObject& renderObject, const glm::vec3& velocity)
+	{
+		b3Vec3 newVelocity = {
+		    .x = velocity.x,
+		    .y = velocity.y,
+		    .z = velocity.z};
+
+		b3Body_SetLinearVelocity(renderObject.physicsId, newVelocity);
+	}
+
+	void PhysicsManager::addLinearVelocity(RenderObject& renderObject, const glm::vec3& velocity)
+	{
+		b3Vec3 currentVelocity = b3Body_GetLinearVelocity(renderObject.physicsId);
+
+		b3Vec3 newVelocity = {
+		    .x = currentVelocity.x + velocity.x,
+		    .y = currentVelocity.y + velocity.y,
+		    .z = currentVelocity.z + velocity.z};
+
+		b3Body_SetLinearVelocity(renderObject.physicsId, newVelocity);
+	}
+
+	void PhysicsManager::addForce(RenderObject& renderObject, const glm::vec3& force)
+	{
+		b3Vec3 newVelocity = {
+		    .x = force.x,
+		    .y = force.y,
+		    .z = force.z};
+
+		b3Body_ApplyForceToCenter(renderObject.physicsId, newVelocity, true);
+	}
+
+	void PhysicsManager::wakeBody(RenderObject& renderObject)
+	{
+		b3Body_SetAwake(renderObject.physicsId, true);
 	}
 } // namespace erb

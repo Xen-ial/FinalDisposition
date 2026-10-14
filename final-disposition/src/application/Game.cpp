@@ -46,8 +46,11 @@ namespace fd
 		auto& engine  = m_app.getEngine();
 		auto& physics = engine.getPhysicsManager();
 
-		engine.getCamera().setFov(80.0F);
-		physics.setArePhysicsUpdatesEnabled(false);
+		m_playerCharacter = Player(engine);
+		m_playerCharacter.init();
+		m_playerCharacter.setPlayerPosition(glm::vec3(-4.0F, 8.5F, 0.0F));
+
+		physics.setArePhysicsUpdatesEnabled(true);
 
 		input.setCursorMode(erb::CursorModes::CURSOR_DISABLED);
 
@@ -85,32 +88,25 @@ namespace fd
 
 	void Game::onUpdate()
 	{
-		static bool isEnabled{false};
-
 		auto& input  = m_app.getInput();
 		auto& engine = m_app.getEngine();
 		auto& camera = engine.getCamera();
 
 		const float deltaTime = engine.deltaTime();
 
-		if (input.isKeyDown(GLFW_KEY_W))
-			camera.processKeyboard(erb::CameraMovement::FORWARD, deltaTime);
+		m_playerCharacter.update(deltaTime);
 
-		if (input.isKeyDown(GLFW_KEY_S))
-			camera.processKeyboard(erb::CameraMovement::BACKWARD, deltaTime);
+		// if (input.isKeyDown(GLFW_KEY_W))
+		// 	camera.processKeyboard(erb::CameraMovement::FORWARD, deltaTime);
 
-		if (input.isKeyDown(GLFW_KEY_D))
-			camera.processKeyboard(erb::CameraMovement::RIGHT, deltaTime);
+		// if (input.isKeyDown(GLFW_KEY_S))
+		// 	camera.processKeyboard(erb::CameraMovement::BACKWARD, deltaTime);
 
-		if (input.isKeyDown(GLFW_KEY_A))
-			camera.processKeyboard(erb::CameraMovement::LEFT, deltaTime);
+		// if (input.isKeyDown(GLFW_KEY_D))
+		// 	camera.processKeyboard(erb::CameraMovement::RIGHT, deltaTime);
 
-		if (input.isKeyPressed(GLFW_KEY_L))
-		{
-			isEnabled = !isEnabled;
-			std::println("Enabled? {}", isEnabled);
-			engine.getPhysicsManager().setArePhysicsUpdatesEnabled(isEnabled);
-		}
+		// if (input.isKeyDown(GLFW_KEY_A))
+		// 	camera.processKeyboard(erb::CameraMovement::LEFT, deltaTime);
 
 		if (input.isKeyPressed(GLFW_KEY_F1))
 		{
@@ -125,19 +121,11 @@ namespace fd
 		if (input.isKeyPressed(GLFW_KEY_ESCAPE))
 			std::exit(EXIT_SUCCESS);
 
-		if (input.isKeyPressed(GLFW_KEY_R))
-		{
-			auto raycast = engine.getRaycastManager();
-			auto hit     = raycast.castRay(camera.getPosition(), camera.getFront() * 10.0F);
-			if (hit.hasHit)
-				std::println("Hit: {}", hit.renderObject->objId);
-		}
-
-		if (m_hasFocus)
-		{
-			const auto& mousePos = input.getRelativeMousePosition();
-			camera.processMouseMovement(mousePos.x, mousePos.y);
-		}
+		// if (m_hasFocus)
+		// {
+		// 	const auto& mousePos = input.getRelativeMousePosition();
+		// 	camera.processMouseMovement(mousePos.x, mousePos.y);
+		// }
 	}
 
 	void Game::onDraw()

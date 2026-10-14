@@ -16,6 +16,7 @@
 #include <erebus/utils/Raycast.h>
 
 #include <functional>
+#include <expected>
 
 namespace erb
 {
@@ -30,6 +31,9 @@ namespace erb
 
 		void removeEntity(RenderObject& object);
 		void addEntity(RenderObject& object);
+
+		std::expected<RenderObject*, bool> findRenderObject(const std::string& name);
+		std::expected<RenderObject*, bool> findRenderObject(std::uint32_t objId);
 
 		void setCamera(Camera3D& camera);
 
@@ -52,7 +56,7 @@ namespace erb
 		PhysicsManager& getPhysicsManager() { return m_physicsManager; }
 
 		std::vector<RenderObject>& getRenderObjects() { return m_renderObjects; }
-		RenderObject& getNamedRenderObject(const std::string& name);
+		RenderObject&              getNamedRenderObject(const std::string& name);
 
 		float deltaTime() const { return m_renderer.getDeltaTime(); }
 

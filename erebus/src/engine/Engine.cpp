@@ -22,6 +22,11 @@ namespace erb
 		m_renderer.addRenderObject(renderObject);
 	}
 
+	void Engine::setCamera(Camera3D& camera)
+	{
+		m_camera = camera;
+	}
+
 	void Engine::destroyEntity(RenderObject& renderObject)
 	{
 		renderObject.shouldBeDestroyed = true;
@@ -107,6 +112,28 @@ namespace erb
 		m_renderObjects.push_back(std::move(object));
 		auto& gameObject = m_renderObjects.at(m_renderObjects.size() - 1);
 		createEntity(&gameObject);
+	}
+
+	std::expected<RenderObject*, bool> Engine::findRenderObject(const std::string& name)
+	{
+		for (auto& object : m_renderObjects)
+		{
+			if (object.objName == name)
+				return &object;
+		}
+
+		return std::unexpected(true);
+	}
+
+	std::expected<RenderObject*, bool> Engine::findRenderObject(std::uint32_t objId)
+	{
+		for (auto& object : m_renderObjects)
+		{
+			if (object.objId == objId)
+				return &object;
+		}
+
+		return std::unexpected(true);
 	}
 
 	void Engine::destroyOldEntities()
