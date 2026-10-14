@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <optional>
+#include <print>
 
 namespace erb
 {
@@ -21,6 +22,17 @@ namespace erb
 
 		void setOnInitCallback(const EventCallback& callback) { m_onInit = callback; }
 		void setOnUpdateCallback(const EventCallback& callback) { m_onUpdate = callback; }
+		void setOnFixedUpdateCallback(const EventCallback& callback)
+		{
+			if (!m_isInitialized)
+			{
+				std::println("Must call init() first before setting the fixed update callback");
+				return;
+			}
+
+			m_fixedUpdate = callback;
+			m_engine->setFixedUpdateCallback(m_fixedUpdate);
+		}
 		void setOnDrawCallback(const EventCallback& callback) { m_onDraw = callback; }
 		void setOnCleanupCallback(const EventCallback& callback) { m_onCleanup = callback; }
 
@@ -39,6 +51,7 @@ namespace erb
 
 		EventCallback m_onInit;
 		EventCallback m_onUpdate;
+		EventCallback m_fixedUpdate;
 		EventCallback m_onDraw;
 		EventCallback m_onCleanup;
 

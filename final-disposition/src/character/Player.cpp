@@ -7,9 +7,14 @@ namespace fd
 		m_fpController = FPController(*m_engine);
 		m_fpController.init();
 	}
-	
+
 	void Player::update(float deltaTime)
 	{
 		m_fpController.update(deltaTime);
+	}
+
+	void Player::fixedUpdate(float deltaTime)
+	{
+		m_fpController.fixedUpdate(deltaTime);
 	}
 } // namespace fd

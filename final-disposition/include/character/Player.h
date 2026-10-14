@@ -16,6 +16,7 @@ namespace fd
 
 		void init();
 		void update(float deltaTime);
+		void fixedUpdate(float deltaTime);
 
 		FPController& getFPController() { return m_fpController; }
 

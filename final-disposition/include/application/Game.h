@@ -20,6 +20,7 @@ namespace fd
 
 		void onInit();
 		void onUpdate();
+		void onFixedUpdate();
 		void onDraw();
 		void onResize(int width, int height);
 		void onCleanup();

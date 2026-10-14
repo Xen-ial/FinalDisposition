@@ -20,6 +20,8 @@
 
 namespace erb
 {
+	using FixedUpdateCallback = std::function<void()>;
+
 	class Engine
 	{
 	public:
@@ -48,6 +50,8 @@ namespace erb
 
 		void render();
 		void cleanup();
+
+		void setFixedUpdateCallback(const FixedUpdateCallback& callback) { m_fixedUpdateCallback = callback; }
 
 		Renderer&       getRenderer() { return m_renderer; }
 		Window&         getWindow() { return m_window; }
@@ -79,9 +83,15 @@ namespace erb
 		Renderer       m_renderer;
 		PhysicsManager m_physicsManager;
 
+		float m_accumulator{};
+
+		FixedUpdateCallback m_fixedUpdateCallback;
+
 		void destroyOldEntities();
 
 		void createEntity(RenderObject* renderObject);
 		void destroyEntity(RenderObject& renderObject);
+
+		void fixedUpdate();
 	};
 } // namespace erb

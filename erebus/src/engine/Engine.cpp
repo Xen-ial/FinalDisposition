@@ -70,9 +70,27 @@ namespace erb
 		return resources.getTexture(name);
 	}
 
+	void Engine::fixedUpdate()
+	{
+		m_physicsManager.syncTransformsToPhysics(m_renderObjects);
+
+		m_accumulator += m_renderer.getDeltaTime();
+		while (m_accumulator >= m_physicsManager.getFixedTimeStep())
+		{
+			if (m_fixedUpdateCallback != nullptr)
+				m_fixedUpdateCallback();
+
+			m_physicsManager.update(m_renderObjects);
+			m_accumulator -= m_physicsManager.getFixedTimeStep();
+		}
+
+		m_physicsManager.syncPhysicsToTransforms(m_renderObjects);
+	}
+
 	void Engine::render()
 	{
-		m_physicsManager.update(m_renderObjects, m_renderer.getDeltaTime());
+		fixedUpdate();
+
 		m_renderer.render(m_camera);
 		m_input.resetFrame();
 	}

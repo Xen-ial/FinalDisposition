@@ -40,7 +40,7 @@ namespace erb
 		renderObject.physicsId = b3_nullBodyId;
 	}
 
-	void PhysicsManager::update(std::vector<RenderObject>& renderObjects, const float elapsedTime)
+	void PhysicsManager::syncTransformsToPhysics(std::vector<RenderObject>& renderObjects)
 	{
 		for (auto& renderObject : renderObjects)
 		{
@@ -76,17 +76,10 @@ namespace erb
 				b3Body_SetAwake(renderObject.physicsId, true);
 			}
 		}
+	}
 
-		if (m_isPhysicsUpdatesEnabled)
-		{
-			m_accumulator += elapsedTime;
-			while (m_accumulator >= m_fixedTime)
-			{
-				b3World_Step(m_worldId, m_fixedTime, m_subStepCount);
-				m_accumulator -= m_fixedTime;
-			}
-		}
-
+	void PhysicsManager::syncPhysicsToTransforms(std::vector<RenderObject>& renderObjects)
+	{
 		for (auto& renderObject : renderObjects)
 		{
 			if (!b3Body_IsValid(renderObject.physicsId))
@@ -111,6 +104,12 @@ namespace erb
 			renderObject.transform.setPosition(newPosition);
 			renderObject.transform.setRotation(newRotation);
 		}
+	}
+
+	void PhysicsManager::update(std::vector<RenderObject>& renderObjects)
+	{
+		if (m_isPhysicsUpdatesEnabled)
+			b3World_Step(m_worldId, m_fixedTime, m_subStepCount);
 	}
 
 	void PhysicsManager::createPhysicsBody(RenderObject& renderObject, PhysicsObjectType objectType)
@@ -263,5 +262,11 @@ namespace erb
 	void PhysicsManager::wakeBody(RenderObject& renderObject)
 	{
 		b3Body_SetAwake(renderObject.physicsId, true);
+	}
+
+	glm::vec3 PhysicsManager::getBodyVelocity(RenderObject& renderObject)
+	{
+		b3Vec3 currentVelocity = b3Body_GetLinearVelocity(renderObject.physicsId);
+		return {currentVelocity.x, currentVelocity.y, currentVelocity.z};
 	}
 } // namespace erb

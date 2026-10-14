@@ -10,7 +10,6 @@
 
 #include <GLFW/glfw3.h>
 
-#include <print>
 #include <cstdlib>
 
 namespace fd
@@ -24,6 +23,9 @@ namespace fd
 
 		m_app.setOnUpdateCallback([this]()
 		    { onUpdate(); });
+
+		m_app.setOnFixedUpdateCallback([this]()
+		    { onFixedUpdate(); });
 
 		m_app.setOnDrawCallback([this]()
 		    { onDraw(); });
@@ -84,6 +86,14 @@ namespace fd
 		erb::PhysicsManager::createBoxHullShape(object2, object2.transform.getScale(), {});
 
 		engine.addEntity(object2);
+	}
+
+	void Game::onFixedUpdate()
+	{
+		auto&       engine    = m_app.getEngine();
+		const float deltaTime = engine.deltaTime();
+
+		m_playerCharacter.fixedUpdate(deltaTime);
 	}
 
 	void Game::onUpdate()

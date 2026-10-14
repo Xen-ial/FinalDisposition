@@ -26,8 +26,8 @@ namespace erb
 
 	struct DynamicPhysicsMaterial
 	{
-		float friction = 0.3F;
-		float density  = 1.0F;
+		float friction  = 0.3F;
+		float density   = 1.0F;
 		float dampening = -1.0F;
 	};
 
@@ -45,7 +45,11 @@ namespace erb
 
 		void init(std::vector<RenderObject>& renderObjects);
 		void cleanup(std::vector<RenderObject>& renderObjects);
-		void update(std::vector<RenderObject>& renderObjects, float elapsedTime);
+
+		void update(std::vector<RenderObject>& renderObjects);
+
+		void syncTransformsToPhysics(std::vector<RenderObject>& renderObjects);
+		void syncPhysicsToTransforms(std::vector<RenderObject>& renderObjects);
 
 		void        createPhysicsBody(RenderObject& renderObject, PhysicsObjectType objectType);
 		static void destroyPhysicsObject(RenderObject& renderObject);
@@ -57,8 +61,9 @@ namespace erb
 		static void setLinearVelocity(RenderObject& renderObject, const glm::vec3& velocity);
 		static void addLinearVelocity(RenderObject& renderObject, const glm::vec3& velocity);
 
+		static glm::vec3 getBodyVelocity(RenderObject& renderObject);
+
 		static void addForce(RenderObject& renderObject, const glm::vec3& force);
-		static void setForce(RenderObject& renderObject, const glm::vec3& force);
 
 		static void wakeBody(RenderObject& renderObject);
 
@@ -70,12 +75,7 @@ namespace erb
 		float& getFixedTimeStep() { return m_fixedTime; }
 		int&   getSubStepCount() { return m_subStepCount; }
 
-		[[nodiscard]] bool isFixedTimeAvailable() const{return m_accumulator >= m_fixedTime;}
-
-		glm::vec3& getGravity()
-		{
-			return m_gravity;
-		}
+		glm::vec3& getGravity() { return m_gravity; }
 
 		[[nodiscard]] const Raycast& getRaycastManager() const { return m_raycastManager; }
 
@@ -87,8 +87,6 @@ namespace erb
 
 		float m_fixedTime{1.0F / 60.0F};
 		int   m_subStepCount{4};
-
-		float m_accumulator{};
 
 		bool m_isPhysicsUpdatesEnabled{true};
 

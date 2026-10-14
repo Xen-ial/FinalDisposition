@@ -1,10 +1,14 @@
-#include "erebus/engine/Camera.h"
 #include <character/FPController.h>
+
 #include <erebus/utils/PhysicsManager.h>
+#include <erebus/engine/Camera.h>
 
 #include <GLFW/glfw3.h>
+
+#include <glm/ext/quaternion_geometric.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtx/hash.hpp>
+
 #include <print>
 
 namespace fd
@@ -25,17 +29,12 @@ namespace fd
 
 	void FPController::update(float deltaTime)
 	{
-		auto&        physics     = m_engine->getPhysicsManager();
-		static float accumulator = 0.0F;
-
-		accumulator += deltaTime;
-		while (accumulator >= physics.getFixedTimeStep())
-		{
-			updatePhysicalMovement(deltaTime);
-			accumulator -= physics.getFixedTimeStep();
-		}
-
 		syncCameraMovement();
+	}
+
+	void FPController::fixedUpdate(float deltaTime)
+	{
+		updatePhysicalMovement(deltaTime);
 	}
 
 	void FPController::syncCameraMovement()
@@ -59,17 +58,23 @@ namespace fd
 		if (fpController == nullptr)
 			return;
 
+		erb::PhysicsManager::wakeBody(*fpController);
+
 		auto& input   = m_engine->getInput();
 		auto& physics = m_engine->getPhysicsManager();
 
 		auto  position = fpController->transform.getPosition();
 		auto& camera   = m_engine->getCamera();
 
-		glm::vec3 moveDir       = glm::vec3(0.0F);
-		float     movementSpeed = m_movementSpeed;
+		glm::vec3 originCameraFront = camera.getFront();
+		glm::vec3 originCameraRight = camera.getRight();
 
-		glm::vec3 cameraFront = glm::normalize(glm::vec3(camera.getFront().x, 0.0F, camera.getFront().z));
-		glm::vec3 cameraRight = glm::normalize(camera.getRight());
+		glm::vec3 cameraFront = glm::normalize(glm::vec3(originCameraFront.x, 0.0F, originCameraFront.z));
+		glm::vec3 cameraRight = glm::normalize(glm::vec3(originCameraRight.x, 0.0F, originCameraRight.z));
+
+		glm::vec3 moveDir = glm::vec3(0.0F);
+
+		m_hasHitGround = m_isGrounded && !m_wasGrounded;
 
 		if (input.isKeyDown(GLFW_KEY_W))
 			moveDir += cameraFront;
@@ -83,23 +88,63 @@ namespace fd
 		if (input.isKeyDown(GLFW_KEY_A))
 			moveDir -= cameraRight;
 
-		if (input.isKeyDown(GLFW_KEY_LEFT_SHIFT))
-			movementSpeed = m_runSpeed;
-		else
-			movementSpeed = m_movementSpeed;
+		m_isRunning = input.isKeyDown(GLFW_KEY_LEFT_SHIFT);
+		m_isWalking = input.isKeyDown(GLFW_KEY_W) || input.isKeyDown(GLFW_KEY_S) ||
+		    input.isKeyDown(GLFW_KEY_D) || input.isKeyDown(GLFW_KEY_A);
 
-		if (input.isKeyDown(GLFW_KEY_SPACE))
-			moveDir.y += m_jumpHeight;
+		glm::vec3 currentVelocity    = erb::PhysicsManager::getBodyVelocity(*fpController);
+		glm::vec3 horizontalVelocity = glm::vec3(currentVelocity.x, 0.0F, currentVelocity.z);
 
-		glm::vec3 normalizedMoveDir = glm::normalize(moveDir);
-		if (glm::length(normalizedMoveDir) > 0)
+		const float runSpeed  = m_runSpeed * m_scalar;
+		const float walkSpeed = m_walkSpeed * m_scalar;
+		const float maxSpeed  = m_maxSpeed * m_scalar;
+
+		if (!m_overrideBaseMovement)
 		{
-			erb::PhysicsManager::addLinearVelocity(*fpController,
-			    {normalizedMoveDir.x * movementSpeed, 0.0F, normalizedMoveDir.z * movementSpeed});
+			float baseSpeed = m_isRunning ? runSpeed : walkSpeed;
+
+			m_speed = baseSpeed;
+			m_speed = std::min(m_speed, m_isRunning ? maxSpeed * 2 : maxSpeed);
 		}
 
-		position = fpController->transform.getPosition();
-		std::println("Pos: {}, {}, {}", position.x, position.y, position.z);
+		glm::vec3 targetVelocity = glm::vec3(0.0F);
+		if (glm::length(moveDir) > 0)
+		{
+			moveDir        = glm::normalize(moveDir);
+			targetVelocity = glm::vec3(moveDir.x, 0.0F, moveDir.z) * m_speed;
+		}
+
+		if (glm::length(targetVelocity) > 0)
+		{
+			glm::vec3 velocityChange  = targetVelocity - horizontalVelocity;
+			float     changeMagnitude = glm::length(velocityChange);
+
+			if (changeMagnitude > 0)
+			{
+				const float acceleration = m_acceleration * m_scalar;
+				float       maxChange    = acceleration * deltaTime;
+				velocityChange *= std::min(1.0F, maxChange / changeMagnitude);
+			}
+
+			horizontalVelocity += velocityChange;
+		}
+		else
+		{
+			float speed = glm::length(horizontalVelocity);
+			if (speed > 0)
+			{
+				const float deAcceleration  = m_deAcceleration * m_scalar;
+				float       deAccelStrength = deAcceleration * deltaTime;
+
+				speed              = std::max(0.0F, speed - deAccelStrength);
+				horizontalVelocity = glm::normalize(horizontalVelocity) * speed;
+			}
+		}
+
+		glm::vec3 linearVelocity = glm::vec3(horizontalVelocity.x, currentVelocity.y, horizontalVelocity.z);
+		erb::PhysicsManager::setLinearVelocity(*fpController, linearVelocity);
+
+		m_wasGrounded = m_isGrounded;
 	}
 
 	erb::RaycastHit FPController::getCameraRaycast()
